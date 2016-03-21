@@ -9,14 +9,14 @@ import (
 )
 
 type AuthApi struct {
-	api duoapi.DuoApi
+	duoapi.DuoApi
 }
 
 // Build a new Duo Auth API object.
 // api is a duoapi.DuoApi object used to make the Duo Rest API calls.
 // Example: authapi.NewAuthApi(*duoapi.NewDuoApi(ikey,skey,host,userAgent,duoapi.SetTimeout(10*time.Second)))
 func NewAuthApi(api duoapi.DuoApi) *AuthApi {
-	return &AuthApi{api: api}
+	return &AuthApi{api}
 }
 
 // API calls will return a StatResult object.  On success, Stat is 'OK'.
@@ -41,7 +41,7 @@ type PingResult struct {
 // This is an unsigned Duo Rest API call which returns the Duo system's time.
 // Use this method to determine whether your system time is in sync with Duo's.
 func (api *AuthApi) Ping() (*PingResult, error) {
-	_, body, err := api.api.Call("GET", "/auth/v2/ping", nil, duoapi.UseTimeout)
+	_, body, err := api.Call("GET", "/auth/v2/ping", nil, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ type CheckResult struct {
 // Use this method to determine whether your ikey, skey and host are correct,
 // and whether your system time is in sync with Duo's.
 func (api *AuthApi) Check() (*CheckResult, error) {
-	_, body, err := api.api.SignedCall("GET", "/auth/v2/check", nil, duoapi.UseTimeout)
+	_, body, err := api.SignedCall("GET", "/auth/v2/check", nil, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ type LogoResult struct {
 // If the API call is successful, the configured logo png is returned.  Othwerwise,
 // error information is returned in the LogoResult return value.
 func (api *AuthApi) Logo() (*LogoResult, error) {
-	resp, body, err := api.api.SignedCall("GET", "/auth/v2/logo", nil, duoapi.UseTimeout)
+	resp, body, err := api.SignedCall("GET", "/auth/v2/logo", nil, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (api *AuthApi) Enroll(options ...func(*url.Values)) (*EnrollResult, error) 
 		o(&opts)
 	}
 
-	_, body, err := api.api.SignedCall("POST", "/auth/v2/enroll", opts, duoapi.UseTimeout)
+	_, body, err := api.SignedCall("POST", "/auth/v2/enroll", opts, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (api *AuthApi) EnrollStatus(userid string,
 	queryArgs.Set("user_id", userid)
 	queryArgs.Set("activation_code", activationCode)
 
-	_, body, err := api.api.SignedCall("POST",
+	_, body, err := api.SignedCall("POST",
 		"/auth/v2/enroll_status",
 		queryArgs,
 		duoapi.UseTimeout)
@@ -232,7 +232,7 @@ func (api *AuthApi) Preauth(options ...func(*url.Values)) (*PreauthResult, error
 	for _, o := range options {
 		o(&opts)
 	}
-	_, body, err := api.api.SignedCall("POST", "/auth/v2/preauth", opts, duoapi.UseTimeout)
+	_, body, err := api.SignedCall("POST", "/auth/v2/preauth", opts, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +340,7 @@ func (api *AuthApi) Auth(factor string, options ...func(*url.Values)) (*AuthResu
 		apiOps = append(apiOps, duoapi.UseTimeout)
 	}
 
-	_, body, err := api.api.SignedCall("POST", "/auth/v2/auth", params, apiOps...)
+	_, body, err := api.SignedCall("POST", "/auth/v2/auth", params, apiOps...)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +369,7 @@ type AuthStatusResult struct {
 func (api *AuthApi) AuthStatus(txid string) (*AuthStatusResult, error) {
 	opts := url.Values{}
 	opts.Set("txid", txid)
-	_, body, err := api.api.SignedCall("GET", "/auth/v2/auth_status", opts)
+	_, body, err := api.SignedCall("GET", "/auth/v2/auth_status", opts)
 	if err != nil {
 		return nil, err
 	}
