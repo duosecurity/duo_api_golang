@@ -209,17 +209,27 @@ func (duoapi *DuoApi) SignedCall(method string,
 	auth_sig := sign(duoapi.ikey, duoapi.skey, method, duoapi.host, uri, now, params)
 
 	url := url.URL{
-		Scheme:   "https",
-		Host:     duoapi.host,
-		Path:     uri,
-		RawQuery: params.Encode(),
+		Scheme: "https",
+		Host:   duoapi.host,
+		Path:   uri,
 	}
+	method = strings.ToUpper(method)
+
+	if method == "GET" {
+		url.RawQuery = params.Encode()
+	}
+
 	request, err := http.NewRequest(method, url.String(), nil)
 	if err != nil {
 		return nil, nil, err
 	}
 	request.Header.Set("Authorization", auth_sig)
 	request.Header.Set("Date", now)
+
+	if method == "POST" || method == "PUT" {
+		request.Body = ioutil.NopCloser(strings.NewReader(params.Encode()))
+		request.Header.Set("Content-type", "application/x-www-form-urlencoded")
+	}
 
 	client := duoapi.authClient
 	if opts.timeout {

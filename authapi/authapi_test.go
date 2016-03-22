@@ -2,8 +2,10 @@ package authapi
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -22,6 +24,16 @@ func buildAuthApi(url string) *AuthApi {
 		userAgent,
 		duoapi.SetTimeout(1*time.Second),
 		duoapi.SetInsecure()))
+}
+
+func getBodyParams(r *http.Request) (url.Values, error) {
+	body, err := ioutil.ReadAll(r.Body)
+	r.Body.Close()
+	if err != nil {
+		return url.Values{}, err
+	}
+	req_params, err := url.ParseQuery(string(body))
+	return req_params, err
 }
 
 // Timeouts are set to 1 second.  Take 15 seconds to respond and verify
@@ -165,11 +177,15 @@ func TestEnroll(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				if r.FormValue("username") != "49c6c3097adb386048c84354d82ea63d" {
+				req_params, err := getBodyParams(r)
+				if err != nil {
+					t.Error("Failed to retrieve body parameters")
+				}
+				if req_params.Get("username") != "49c6c3097adb386048c84354d82ea63d" {
 					t.Error("TestEnroll failed to set 'username' query parameter:" +
 						r.RequestURI)
 				}
-				if r.FormValue("valid_secs") != "10" {
+				if req_params.Get("valid_secs") != "10" {
 					t.Error("TestEnroll failed to set 'valid_secs' query parameter: " +
 						r.RequestURI)
 				}
@@ -218,11 +234,15 @@ func TestEnrollStatus(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				if r.FormValue("user_id") != "49c6c3097adb386048c84354d82ea63d" {
+				req_params, err := getBodyParams(r)
+				if err != nil {
+					t.Error("Failed to retrieve body parameters")
+				}
+				if req_params.Get("user_id") != "49c6c3097adb386048c84354d82ea63d" {
 					t.Error("TestEnrollStatus failed to set 'user_id' query parameter:" +
 						r.RequestURI)
 				}
-				if r.FormValue("activation_code") != "10" {
+				if req_params.Get("activation_code") != "10" {
 					t.Error("TestEnrollStatus failed to set 'activation_code' query parameter: " +
 						r.RequestURI)
 				}
@@ -255,15 +275,19 @@ func TestPreauthUserId(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				if r.FormValue("ipaddr") != "127.0.0.1" {
+				req_params, err := getBodyParams(r)
+				if err != nil {
+					t.Error("Failed to retrieve body parameters")
+				}
+				if req_params.Get("ipaddr") != "127.0.0.1" {
 					t.Error("TestPreauth failed to set 'ipaddr' query parameter:" +
 						r.RequestURI)
 				}
-				if r.FormValue("user_id") != "10" {
+				if req_params.Get("user_id") != "10" {
 					t.Error("TestEnrollStatus failed to set 'user_id' query parameter: " +
 						r.RequestURI)
 				}
-				if r.FormValue("trusted_device_token") != "l33t" {
+				if req_params.Get("trusted_device_token") != "l33t" {
 					t.Error("TestEnrollStatus failed to set 'trusted_device_token' query parameter: " +
 						r.RequestURI)
 				}
@@ -357,7 +381,11 @@ func TestPreauthEnroll(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				if r.FormValue("username") != "10" {
+				req_params, err := getBodyParams(r)
+				if err != nil {
+					t.Error("Failed to retrieve body parameters")
+				}
+				if req_params.Get("username") != "10" {
 					t.Error("TestEnrollStatus failed to set 'username' query parameter: " +
 						r.RequestURI)
 				}
@@ -400,6 +428,10 @@ func TestAuth(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
+				req_params, err := getBodyParams(r)
+				if err != nil {
+					t.Error("Failed to retrieve body parameters")
+				}
 				expected := map[string]string{
 					"username":         "username value",
 					"user_id":          "user_id value",
@@ -411,7 +443,7 @@ func TestAuth(t *testing.T) {
 					"display_username": "display username",
 				}
 				for key, value := range expected {
-					if r.FormValue(key) != value {
+					if req_params.Get(key) != value {
 						t.Errorf("TestAuth failed to set '%s' query parameter: "+
 							r.RequestURI, key)
 					}
