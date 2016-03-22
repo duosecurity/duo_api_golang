@@ -302,9 +302,10 @@ type AuthResult struct {
 	StatResult
 	Response struct {
 		// Synchronous
-		Result     string
-		Status     string
-		Status_Msg string
+		Result               string
+		Status               string
+		Status_Msg           string
+		Trusted_Device_Token string
 		// Asynchronous
 		Txid string
 	}
