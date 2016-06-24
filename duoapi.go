@@ -113,6 +113,7 @@ func NewDuoApi(ikey string,
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
+			Proxy: ProxyFromEnvironment,
 			RootCAs:            certPool,
 			InsecureSkipVerify: opts.insecure,
 		},
