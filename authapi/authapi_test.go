@@ -2,7 +2,9 @@ package authapi
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,7 +15,7 @@ import (
 	"github.com/duosecurity/duo_api_golang"
 )
 
-func buildAuthApi(url string) *AuthApi {
+func buildAuthApi(url string, proxy func(*http.Request) (*url.URL, error)) *AuthApi {
 	ikey := "eyekey"
 	skey := "esskey"
 	host := strings.Split(url, "//")[1]
@@ -23,7 +25,8 @@ func buildAuthApi(url string) *AuthApi {
 		host,
 		userAgent,
 		duoapi.SetTimeout(1*time.Second),
-		duoapi.SetInsecure()))
+		duoapi.SetInsecure(),
+		duoapi.SetProxy(proxy)))
 }
 
 func getBodyParams(r *http.Request) (url.Values, error) {
@@ -43,7 +46,7 @@ func TestTimeout(t *testing.T) {
 		time.Sleep(15 * time.Second)
 	}))
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	start := time.Now()
 	_, err := duo.Ping()
@@ -70,7 +73,7 @@ func TestPing(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	result, err := duo.Ping()
 	if err != nil {
@@ -99,11 +102,76 @@ func TestCheck(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	result, err := duo.Check()
 	if err != nil {
 		t.Error("Failed TestCheck: " + err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Error("Expected OK, but got " + result.Stat)
+	}
+	if result.Response.Time != 1357020061 {
+		t.Errorf("Expected 1357020061, but got %d", result.Response.Time)
+	}
+}
+
+// Test a successful Check request / response through a proxy
+func TestProxy(t *testing.T) {
+	// Proxy server
+	ps := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == "CONNECT" {
+					// Proxy the connection through to the requested host.
+					conn, err := net.Dial("tcp", r.URL.Host)
+					if err != nil {
+						t.Error("Failed to connect to " + r.URL.String() + ", " + err.Error())
+						return
+					}
+					// Take over the request connection.
+					hj, _ := w.(http.Hijacker)
+					reqconn, _, err := hj.Hijack()
+					if err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+					// Tell the client that everything is going to be OK.
+					reqconn.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+					// Copy all the things.
+					f := func(src, dst net.Conn) {
+						defer src.Close()
+						io.Copy(src, dst)
+					}
+					go f(conn, reqconn)
+					go f(reqconn, conn)
+				} else {
+					t.Error("Expected CONNECT, but got " + r.Method)
+				}
+			}))
+	defer ps.Close()
+
+	// Duo dummy server response.
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprintln(w, `
+            {
+              "stat": "OK",
+              "response": {
+                "time": 1357020061
+              }
+            }`)
+			}))
+	defer ts.Close()
+
+	// Connect through the test proxy.
+	proxy_url, err := url.Parse(ps.URL)
+	duo := buildAuthApi(ts.URL, http.ProxyURL(proxy_url))
+
+	result, err := duo.Check()
+	if err != nil {
+		t.Fatal("Failed TestCheck: " + err.Error())
 	}
 	if result.Stat != "OK" {
 		t.Error("Expected OK, but got " + result.Stat)
@@ -127,7 +195,7 @@ func TestLogo(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	_, err := duo.Logo()
 	if err != nil {
@@ -152,7 +220,7 @@ func TestLogoError(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.Logo()
 	if err != nil {
@@ -203,7 +271,7 @@ func TestEnroll(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	result, err := duo.Enroll(EnrollUsername("49c6c3097adb386048c84354d82ea63d"), EnrollValidSeconds(10))
 	if err != nil {
@@ -254,7 +322,7 @@ func TestEnrollStatus(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	result, err := duo.EnrollStatus("49c6c3097adb386048c84354d82ea63d", "10")
 	if err != nil {
@@ -320,7 +388,7 @@ func TestPreauthUserId(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.Preauth(PreauthUserId("10"), PreauthIpAddr("127.0.0.1"), PreauthTrustedToken("l33t"))
 	if err != nil {
@@ -401,7 +469,7 @@ func TestPreauthEnroll(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.Preauth(PreauthUsername("10"))
 	if err != nil {
@@ -460,7 +528,7 @@ func TestAuth(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.Auth("auto",
 		AuthUserId("user_id value"),
@@ -514,7 +582,7 @@ func TestAuthStatus(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.AuthStatus("4")
 	if err != nil {
