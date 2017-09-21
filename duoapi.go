@@ -254,6 +254,47 @@ func (duoapi *DuoApi) SignedCall(method string,
 	return resp, body, err
 }
 
+// SignedCallWithDefaultTimeout was added by us (agilebits) to allow for calls with the indicated timeout
+func (duoapi *DuoApi) SignedCallWithDefaultTimeout(method string,
+	uri string,
+	params url.Values,
+	options ...DuoApiOption) (*http.Response, []byte, error) {
+
+	now := time.Now().UTC().Format(time.RFC1123Z)
+	auth_sig := sign(duoapi.ikey, duoapi.skey, method, duoapi.host, uri, now, params)
+
+	url := url.URL{
+		Scheme: "https",
+		Host:   duoapi.host,
+		Path:   uri,
+	}
+	method = strings.ToUpper(method)
+
+	if method == "GET" {
+		url.RawQuery = params.Encode()
+	}
+
+	request, err := http.NewRequest(method, url.String(), nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	request.Header.Set("Authorization", auth_sig)
+	request.Header.Set("Date", now)
+
+	if method == "POST" || method == "PUT" {
+		request.Body = ioutil.NopCloser(strings.NewReader(params.Encode()))
+		request.Header.Set("Content-type", "application/x-www-form-urlencoded")
+	}
+
+	resp, err := duoapi.authClient.Do(request)
+	var body []byte
+	if err == nil {
+		body, err = ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+	}
+	return resp, body, err
+}
+
 const duoPinnedCert string = `
 subject= /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Assured ID Root CA
 -----BEGIN CERTIFICATE-----

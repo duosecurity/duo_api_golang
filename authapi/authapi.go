@@ -380,3 +380,18 @@ func (api *AuthApi) AuthStatus(txid string) (*AuthStatusResult, error) {
 	}
 	return ret, nil
 }
+
+// AuthStatusWithDefaultTimeout was added by us (agilebits) to allow for authStatus calls with the proper timeout
+func (api *AuthApi) AuthStatusWithDefaultTimeout(txid string) (*AuthStatusResult, error) {
+	opts := url.Values{}
+	opts.Set("txid", txid)
+	_, body, err := api.SignedCallWithDefaultTimeout("GET", "/auth/v2/auth_status", opts)
+	if err != nil {
+		return nil, err
+	}
+	ret := &AuthStatusResult{}
+	if err = json.Unmarshal(body, ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
