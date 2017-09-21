@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/duosecurity/duo_api_golang"
+	"github.com/agilebits/duo_api_golang"
 )
 
 type AuthApi struct {
@@ -371,6 +371,21 @@ func (api *AuthApi) AuthStatus(txid string) (*AuthStatusResult, error) {
 	opts := url.Values{}
 	opts.Set("txid", txid)
 	_, body, err := api.SignedCall("GET", "/auth/v2/auth_status", opts)
+	if err != nil {
+		return nil, err
+	}
+	ret := &AuthStatusResult{}
+	if err = json.Unmarshal(body, ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+// AuthStatusWithDefaultTimeout was added by us (agilebits) to allow for authStatus calls with the proper timeout
+func (api *AuthApi) AuthStatusWithDefaultTimeout(txid string) (*AuthStatusResult, error) {
+	opts := url.Values{}
+	opts.Set("txid", txid)
+	_, body, err := api.SignedCallWithDefaultTimeout("GET", "/auth/v2/auth_status", opts)
 	if err != nil {
 		return nil, err
 	}
