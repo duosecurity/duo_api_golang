@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/duosecurity/duo_api_golang"
+	"github.com/agilebits/duo_api_golang"
 )
 
 func buildAuthApi(url string, proxy func(*http.Request) (*url.URL, error)) *AuthApi {
