@@ -52,7 +52,7 @@ func TestTimeout(t *testing.T) {
 	_, err := duo.Ping()
 	duration := time.Since(start)
 	if duration.Seconds() > 2 {
-		t.Error("Timeout took %d seconds", duration.Seconds())
+		t.Errorf("Timeout took %v seconds", duration.Seconds())
 	}
 	if err == nil {
 		t.Error("Expected timeout error.")
