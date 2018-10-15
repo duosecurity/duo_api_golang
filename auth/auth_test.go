@@ -1,4 +1,4 @@
-package authapi
+package auth
 
 import (
 	"fmt"
