@@ -15,18 +15,13 @@ import (
 	"github.com/duosecurity/duo_api_golang"
 )
 
-func buildAuthApi(url string, proxy func(*http.Request) (*url.URL, error)) *AuthApi {
+func buildAuthClient(url string, proxy func(*http.Request) (*url.URL, error)) *Client {
 	ikey := "eyekey"
 	skey := "esskey"
 	host := strings.Split(url, "//")[1]
 	userAgent := "GoTestClient"
-	return NewAuthApi(*duoapi.NewDuoApi(ikey,
-		skey,
-		host,
-		userAgent,
-		duoapi.SetTimeout(1*time.Second),
-		duoapi.SetInsecure(),
-		duoapi.SetProxy(proxy)))
+	base := duoapi.New(ikey, skey, host, userAgent, duoapi.SetTimeout(1*time.Second), duoapi.SetInsecure(), duoapi.SetProxy(proxy))
+	return New(*base)
 }
 
 func getBodyParams(r *http.Request) (url.Values, error) {
@@ -35,8 +30,8 @@ func getBodyParams(r *http.Request) (url.Values, error) {
 	if err != nil {
 		return url.Values{}, err
 	}
-	req_params, err := url.ParseQuery(string(body))
-	return req_params, err
+	reqParams, err := url.ParseQuery(string(body))
+	return reqParams, err
 }
 
 // Timeouts are set to 1 second.  Take 15 seconds to respond and verify
@@ -46,7 +41,7 @@ func TestTimeout(t *testing.T) {
 		time.Sleep(15 * time.Second)
 	}))
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	start := time.Now()
 	_, err := duo.Ping()
@@ -73,7 +68,7 @@ func TestPing(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	result, err := duo.Ping()
 	if err != nil {
@@ -102,7 +97,7 @@ func TestCheck(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	result, err := duo.Check()
 	if err != nil {
@@ -167,7 +162,7 @@ func TestProxy(t *testing.T) {
 
 	// Connect through the test proxy.
 	proxy_url, err := url.Parse(ps.URL)
-	duo := buildAuthApi(ts.URL, http.ProxyURL(proxy_url))
+	duo := buildAuthClient(ts.URL, http.ProxyURL(proxy_url))
 
 	result, err := duo.Check()
 	if err != nil {
@@ -195,7 +190,7 @@ func TestLogo(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	_, err := duo.Logo()
 	if err != nil {
@@ -220,7 +215,7 @@ func TestLogoError(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	res, err := duo.Logo()
 	if err != nil {
@@ -235,7 +230,7 @@ func TestLogoError(t *testing.T) {
 	if res.Message == nil || *res.Message != "Logo not found" {
 		t.Error("Unexpected message.")
 	}
-	if res.Message_Detail == nil || *res.Message_Detail != "Why u no have logo?" {
+	if res.MessageDetail == nil || *res.MessageDetail != "Why u no have logo?" {
 		t.Error("Unexpected message detail.")
 	}
 }
@@ -271,7 +266,7 @@ func TestEnroll(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	result, err := duo.Enroll(EnrollUsername("49c6c3097adb386048c84354d82ea63d"), EnrollValidSeconds(10))
 	if err != nil {
@@ -322,7 +317,7 @@ func TestEnrollStatus(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	result, err := duo.EnrollStatus("49c6c3097adb386048c84354d82ea63d", "10")
 	if err != nil {
@@ -388,7 +383,7 @@ func TestPreauthUserId(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	res, err := duo.Preauth(PreauthUserId("10"), PreauthIpAddr("127.0.0.1"), PreauthTrustedToken("l33t"))
 	if err != nil {
@@ -400,8 +395,8 @@ func TestPreauthUserId(t *testing.T) {
 	if res.Response.Result != "auth" {
 		t.Error("Unexpected response result: " + res.Response.Result)
 	}
-	if res.Response.Status_Msg != "Account is active" {
-		t.Error("Unexpected status message: " + res.Response.Status_Msg)
+	if res.Response.StatusMsg != "Account is active" {
+		t.Error("Unexpected status message: " + res.Response.StatusMsg)
 	}
 	if len(res.Response.Devices) != 2 {
 		t.Errorf("Unexpected devices length: %d", len(res.Response.Devices))
@@ -469,7 +464,7 @@ func TestPreauthEnroll(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	res, err := duo.Preauth(PreauthUsername("10"))
 	if err != nil {
@@ -478,14 +473,14 @@ func TestPreauthEnroll(t *testing.T) {
 	if res.Stat != "OK" {
 		t.Error("Unexpected stat: " + res.Stat)
 	}
-	if res.Response.Enroll_Portal_Url != "https://api-3945ef22.duosecurity.com/portal?48bac5d9393fb2c2" {
-		t.Error("Unexpected enroll portal URL: " + res.Response.Enroll_Portal_Url)
+	if res.Response.EnrollPortalURL != "https://api-3945ef22.duosecurity.com/portal?48bac5d9393fb2c2" {
+		t.Error("Unexpected enroll portal URL: " + res.Response.EnrollPortalURL)
 	}
 	if res.Response.Result != "enroll" {
 		t.Error("Unexpected response result: " + res.Response.Result)
 	}
-	if res.Response.Status_Msg != "Enroll an authentication device to proceed" {
-		t.Error("Unexpected status msg: " + res.Response.Status_Msg)
+	if res.Response.StatusMsg != "Enroll an authentication device to proceed" {
+		t.Error("Unexpected status msg: " + res.Response.StatusMsg)
 	}
 }
 
@@ -528,7 +523,7 @@ func TestAuth(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	res, err := duo.Auth("auto",
 		AuthUserId("user_id value"),
@@ -551,8 +546,8 @@ func TestAuth(t *testing.T) {
 	if res.Response.Status != "allow" {
 		t.Error("Unexpected response status: " + res.Response.Status)
 	}
-	if res.Response.Status_Msg != "Success. Logging you in..." {
-		t.Error("Unexpected response status msg: " + res.Response.Status_Msg)
+	if res.Response.StatusMsg != "Success. Logging you in..." {
+		t.Error("Unexpected response status msg: " + res.Response.StatusMsg)
 	}
 }
 
@@ -582,7 +577,7 @@ func TestAuthStatus(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthApi(ts.URL, nil)
+	duo := buildAuthClient(ts.URL, nil)
 
 	res, err := duo.AuthStatus("4")
 	if err != nil {
@@ -598,7 +593,7 @@ func TestAuthStatus(t *testing.T) {
 	if res.Response.Status != "pushed" {
 		t.Error("Unexpected response status: " + res.Response.Status)
 	}
-	if res.Response.Status_Msg != "Pushed a login request to your phone..." {
-		t.Error("Unexpected response status msg: " + res.Response.Status_Msg)
+	if res.Response.StatusMsg != "Pushed a login request to your phone..." {
+		t.Error("Unexpected response status msg: " + res.Response.StatusMsg)
 	}
 }
