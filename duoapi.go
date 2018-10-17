@@ -158,6 +158,12 @@ type BaseResult struct {
 	MessageDetail *string `json:"message_detail"`
 }
 
+// StringResult models responses containing a simple string.
+type StringResult struct {
+	BaseResult
+	Response string
+}
+
 // Make an unsigned Duo Rest API call.  See Duo's online documentation
 // for the available REST API's.
 // method is POST or GET

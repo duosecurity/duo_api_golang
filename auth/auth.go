@@ -9,72 +9,68 @@ import (
 	"github.com/duosecurity/duo_api_golang"
 )
 
+// Client provides access to Duo's auth API.
 type Client struct {
 	duoapi.BaseClient
 }
 
-// Build a new Duo Auth API object.
-// api is a duoapi.DuoApi object used to make the Duo Rest API calls.
-// Example: authapi.NewAuthApi(*duoapi.NewDuoApi(ikey,skey,host,userAgent,duoapi.SetTimeout(10*time.Second)))
+// New initializes and returns a Client for the Duo Auth API.
+// The base parameter is a duoapi.BaseClient, and is used to make signed calls to the Duo API.
+// Example: auth.New(*duoapi.New(ikey, skey, host, userAgent, duoapi.SetTimeout(10*time.Second)))
 func New(base duoapi.BaseClient) *Client {
 	return &Client{base}
 }
 
-// Return object for the 'Ping' API call.
-type PingResult struct {
+// TimeResult models responses containing a time value.
+type TimeResult struct {
 	duoapi.BaseResult
 	Response struct {
 		Time int64
 	}
 }
 
-// Duo's Ping method. https://www.duosecurity.com/docs/authapi#/ping
+// Ping calls GET /auth/v2/ping
+// See https://duo.com/docs/authapi#/ping
 // This is an unsigned Duo Rest API call which returns the Duo system's time.
 // Use this method to determine whether your system time is in sync with Duo's.
-func (c *Client) Ping() (*PingResult, error) {
+func (c *Client) Ping() (*TimeResult, error) {
 	_, body, err := c.Call(http.MethodGet, "/auth/v2/ping", nil, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
-	ret := &PingResult{}
+	ret := &TimeResult{}
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
-// Return object for the 'Check' API call.
-type CheckResult struct {
-	duoapi.BaseResult
-	Response struct {
-		Time int64
-	}
-}
-
-// Call Duo's Check method. https://www.duosecurity.com/docs/authapi#/check
+// Check calls GET /auth/v2/check
+// See https://duo.com/docs/authapi#/check
 // Check is a signed Duo API call, which returns the Duo system's time.
 // Use this method to determine whether your ikey, skey and host are correct,
 // and whether your system time is in sync with Duo's.
-func (c *Client) Check() (*CheckResult, error) {
+func (c *Client) Check() (*TimeResult, error) {
 	_, body, err := c.SignedCall(http.MethodGet, "/auth/v2/check", nil, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
-	ret := &CheckResult{}
+	ret := &TimeResult{}
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
-// Return object for the 'Logo' API call.
+// LogoResult models responses containing raw PNG image data.
 type LogoResult struct {
 	duoapi.BaseResult
-	png *[]byte
+	PNG *[]byte
 }
 
-// Duo's Logo method. https://www.duosecurity.com/docs/authapi#/logo
-// If the API call is successful, the configured logo png is returned.  Othwerwise,
+// Logo calls GET /auth/v2/logo
+// See https://duo.com/docs/authapi#/logo
+// If the API call is successful, the configured logo png is returned. Othwerwise,
 // error information is returned in the LogoResult return value.
 func (c *Client) Logo() (*LogoResult, error) {
 	resp, body, err := c.SignedCall(http.MethodGet, "/auth/v2/logo", nil, duoapi.UseTimeout)
@@ -82,8 +78,7 @@ func (c *Client) Logo() (*LogoResult, error) {
 		return nil, err
 	}
 	if resp.StatusCode == 200 {
-		ret := &LogoResult{BaseResult: duoapi.BaseResult{Stat: "OK"},
-			png: &body}
+		ret := &LogoResult{BaseResult: duoapi.BaseResult{Stat: "OK"}, PNG: &body}
 		return ret, nil
 	}
 	ret := &LogoResult{}
@@ -93,34 +88,35 @@ func (c *Client) Logo() (*LogoResult, error) {
 	return ret, nil
 }
 
-// Optional parameter for the Enroll method.
+// EnrollUsername sets the optional username parameter for an Enroll request.
 func EnrollUsername(username string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("username", username)
 	}
 }
 
-// Optional parameter for the Enroll method.
+// EnrollValidSeconds sets the optional valid_secs parameter for an Enroll request.
 func EnrollValidSeconds(secs uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("valid_secs", strconv.FormatUint(secs, 10))
 	}
 }
 
-// Enroll return type.
+// EnrollResult models responses containing 2FA enrollment data information.
 type EnrollResult struct {
 	duoapi.BaseResult
 	Response struct {
-		Activation_Barcode string
-		Activation_Code    string
-		Expiration         int64
-		User_Id            string
-		Username           string
+		ActivationBarcode string `json:"activation_barcode"`
+		ActivationCode    string `json:"activation_code"`
+		Expiration        int64
+		UserID            string `json:"user_id"`
+		Username          string
 	}
 }
 
-// Duo's Enroll method. https://www.duosecurity.com/docs/authapi#/enroll
-// Use EnrollUsername() to include the optional username parameter.
+// Enroll calls POST /auth/v2/enroll
+// See https://duo.com/docs/authapi#/enroll
+// Use EnrollUsername() to set the optional username parameter.
 // Use EnrollValidSeconds() to change the default validation time limit that the
 // user has to complete enrollment.
 func (c *Client) Enroll(options ...func(*url.Values)) (*EnrollResult, error) {
@@ -140,15 +136,11 @@ func (c *Client) Enroll(options ...func(*url.Values)) (*EnrollResult, error) {
 	return ret, nil
 }
 
-// Response is "success", "invalid" or "waiting".
-type EnrollStatusResult struct {
-	duoapi.BaseResult
-	Response string
-}
-
-// Duo's EnrollStatus method. https://www.duosecurity.com/docs/authapi#/enroll_status
+// EnrollStatus calls POST /auth/v2/enroll_status
+// See https://duo.com/docs/authapi#/enroll_status
 // Return the status of an outstanding Enrollment.
-func (c *Client) EnrollStatus(userid string, activationCode string) (*EnrollStatusResult, error) {
+// Response is one of {"success", "invalid", "waiting"}
+func (c *Client) EnrollStatus(userid string, activationCode string) (*duoapi.StringResult, error) {
 	queryArgs := url.Values{}
 	queryArgs.Set("user_id", userid)
 	queryArgs.Set("activation_code", activationCode)
@@ -158,14 +150,14 @@ func (c *Client) EnrollStatus(userid string, activationCode string) (*EnrollStat
 	if err != nil {
 		return nil, err
 	}
-	ret := &EnrollStatusResult{}
+	ret := &duoapi.StringResult{}
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
-// Preauth return type.
+// PreauthResult models responses containing available authentication factors.
 type PreauthResult struct {
 	duoapi.BaseResult
 	Response struct {
@@ -182,38 +174,41 @@ type PreauthResult struct {
 	}
 }
 
-func PreauthUserId(userid string) func(*url.Values) {
+// PreauthUserID sets the user_id parameter for a Preauth request.
+func PreauthUserID(userID string) func(*url.Values) {
 	return func(opts *url.Values) {
-		opts.Set("user_id", userid)
+		opts.Set("user_id", userID)
 	}
 }
 
+// PreauthUsername sets the username parameter for a Preauth request.
 func PreauthUsername(username string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("username", username)
 	}
 }
 
-func PreauthIpAddr(ip string) func(*url.Values) {
+// PreauthIPAddr sets the optional ipaddr parameter for a Preauth request.
+func PreauthIPAddr(ip string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("ipaddr", ip)
 	}
 }
 
-func PreauthTrustedToken(trustedtoken string) func(*url.Values) {
+// PreauthTrustedDeviceToken sets the optional parameter for a Preauth request.
+func PreauthTrustedDeviceToken(token string) func(*url.Values) {
 	return func(opts *url.Values) {
-		opts.Set("trusted_device_token", trustedtoken)
+		opts.Set("trusted_device_token", token)
 	}
 }
 
-// Duo's Preauth method. https://www.duosecurity.com/docs/authapi#/preauth
-// options Optional values to include in the preauth call.
-// Use PreauthUserId to specify the user_id parameter.
-// Use PreauthUsername to specify the username parameter.  You must
-// specify PreauthUserId or PreauthUsername, but not both.
-// Use PreauthIpAddr to include the ipaddr parameter, the ip address
-// of the client attempting authroization.
-// Use PreauthTrustedToken to specify the trusted_device_token parameter.
+// Preauth calls POST /auth/v2/preauth
+// See https://duo.com/docs/authapi#/preauth
+// Use PreauthUserID to specify the user_id parameter.
+// Use PreauthUsername to specify the username parameter.
+// You must specify one of PreauthUserID or PreauthUsername, but not both.
+// Use PreauthIPAddr to set the optional ipaddr parameter (the IP address of the client attempting authorization).
+// Use PreauthTrustedDeviceToken to specify the optional trusted_device_token parameter.
 func (c *Client) Preauth(options ...func(*url.Values)) (*PreauthResult, error) {
 	opts := url.Values{}
 	for _, o := range options {
@@ -230,61 +225,70 @@ func (c *Client) Preauth(options ...func(*url.Values)) (*PreauthResult, error) {
 	return ret, nil
 }
 
-func AuthUserId(userid string) func(*url.Values) {
+// AuthUserID sets the user_id parameter for an Auth request.
+func AuthUserID(userID string) func(*url.Values) {
 	return func(opts *url.Values) {
-		opts.Set("user_id", userid)
+		opts.Set("user_id", userID)
 	}
 }
 
+// AuthUsername sets the username parameter for an Auth request.
 func AuthUsername(username string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("username", username)
 	}
 }
 
-func AuthIpAddr(ip string) func(*url.Values) {
+// AuthIPAddr sets the optional ipaddr parameter for an Auth request.
+func AuthIPAddr(ip string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("ipaddr", ip)
 	}
 }
 
+// AuthAsync sets the optional async parameter for an Auth request.
 func AuthAsync() func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("async", "1")
 	}
 }
 
+// AuthDevice sets the device parameter for an Auth request.
 func AuthDevice(device string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("device", device)
 	}
 }
 
-func AuthType(type_ string) func(*url.Values) {
+// AuthType sets the optional type parameter for an Auth request.
+func AuthType(typ string) func(*url.Values) {
 	return func(opts *url.Values) {
-		opts.Set("type", type_)
+		opts.Set("type", typ)
 	}
 }
 
+// AuthDisplayUsername sets the optional display_username parameter for an Auth request.
 func AuthDisplayUsername(username string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("display_username", username)
 	}
 }
 
-func AuthPushinfo(pushinfo string) func(*url.Values) {
+// AuthPushInfo sets the optional pushinfo parameter for an Auth request.
+func AuthPushInfo(pushinfo string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("pushinfo", pushinfo)
 	}
 }
 
+// AuthPasscode sets the passcode parameter for an Auth request.
 func AuthPasscode(passcode string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("passcode", passcode)
 	}
 }
 
-// Auth return type.
+// AuthResult models responses containing authentication information.
 type AuthResult struct {
 	duoapi.BaseResult
 	Response struct {
@@ -298,24 +302,21 @@ type AuthResult struct {
 	}
 }
 
-// Duo's Auth method. https://www.duosecurity.com/docs/authapi#/auth
-// Factor must be one of 'auto', 'push', 'passcode', 'sms' or 'phone'.
-// Use AuthUserId to specify the user_id.
-// Use AuthUsername to speicy the username.  You must specify either AuthUserId
-// or AuthUsername, but not both.
-// Use AuthIpAddr to include the client's IP address.
+// Auth calls POST /auth/v2/auth
+// See https://duo.com/docs/authapi#/auth
+// Factor must be one of {"auto", "push", "passcode", "sms", "phone"}
+// Use AuthUserID to specify the user_id.
+// Use AuthUsername to specify the username.
+// You must specify either AuthUserID or AuthUsername, but not both.
+// Use AuthIPAddr to include the client's IP address.
 // Use AuthAsync to toggle whether the call blocks for the user's response or not.
 // If used asynchronously, get the auth status with the AuthStatus method.
 // When using factor 'push', use AuthDevice to specify the device ID to push to.
 // When using factor 'push', use AuthType to display some extra auth text to the user.
-// When using factor 'push', use AuthDisplayUsername to display some extra text
-// to the user.
-// When using factor 'push', use AuthPushInfo to include some URL-encoded key/value
-// pairs to display to the user.
-// When using factor 'passcode', use AuthPasscode to specify the passcode entered
-// by the user.
-// When using factor 'sms' or 'phone', use AuthDevice to specify which device
-// should receive the SMS or phone call.
+// When using factor 'push', use AuthDisplayUsername to display some extra text to the user.
+// When using factor 'push', use AuthPushInfo to include some URL-encoded key/value pairs to display to the user.
+// When using factor 'passcode', use AuthPasscode to specify the passcode entered by the user.
+// When using factor 'sms' or 'phone', use AuthDevice to specify which device should receive the SMS or phone call.
 func (c *Client) Auth(factor string, options ...func(*url.Values)) (*AuthResult, error) {
 	params := url.Values{}
 	for _, o := range options {
@@ -332,6 +333,7 @@ func (c *Client) Auth(factor string, options ...func(*url.Values)) (*AuthResult,
 	if err != nil {
 		return nil, err
 	}
+
 	ret := &AuthResult{}
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
@@ -339,7 +341,7 @@ func (c *Client) Auth(factor string, options ...func(*url.Values)) (*AuthResult,
 	return ret, nil
 }
 
-// AuthStatus return type.
+// AuthStatusResult models responses containing information about a previous auth request.
 type AuthStatusResult struct {
 	duoapi.BaseResult
 	Response struct {
@@ -350,17 +352,18 @@ type AuthStatusResult struct {
 	}
 }
 
-// Duo's auth_status method.  https://www.duosecurity.com/docs/authapi#/auth_status
-// When using the Auth call in async mode, use this method to retrieve the
-// result of the authentication attempt.
-// txid is returned by the Auth call.
-func (c *Client) AuthStatus(txid string) (*AuthStatusResult, error) {
+// AuthStatus calls GET /auth/v2/auth_status
+// See https://duo.com/docs/authapi#/auth_status
+// When using the Auth method in async mode, pass the returned TxID to AuthStatus to check the result of an authentication attempt.
+func (c *Client) AuthStatus(txID string) (*AuthStatusResult, error) {
 	opts := url.Values{}
-	opts.Set("txid", txid)
+	opts.Set("txid", txID)
+
 	_, body, err := c.SignedCall(http.MethodGet, "/auth/v2/auth_status", opts)
 	if err != nil {
 		return nil, err
 	}
+
 	ret := &AuthStatusResult{}
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err

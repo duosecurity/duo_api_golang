@@ -275,17 +275,17 @@ func TestEnroll(t *testing.T) {
 	if result.Stat != "OK" {
 		t.Error("Expected OK, but got " + result.Stat)
 	}
-	if result.Response.Activation_Barcode != "https://api-eval.duosecurity.com/frame/qr?value=8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA" {
-		t.Error("Unexpected activation_barcode: " + result.Response.Activation_Barcode)
+	if result.Response.ActivationBarcode != "https://api-eval.duosecurity.com/frame/qr?value=8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA" {
+		t.Error("Unexpected activation_barcode: " + result.Response.ActivationBarcode)
 	}
-	if result.Response.Activation_Code != "duo://8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA" {
-		t.Error("Unexpected activation code: " + result.Response.Activation_Code)
+	if result.Response.ActivationCode != "duo://8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA" {
+		t.Error("Unexpected activation code: " + result.Response.ActivationCode)
 	}
 	if result.Response.Expiration != 1357020061 {
 		t.Errorf("Unexpected expiration time: %d", result.Response.Expiration)
 	}
-	if result.Response.User_Id != "DU94SWSN4ADHHJHF2HXT" {
-		t.Error("Unexpected user id: " + result.Response.User_Id)
+	if result.Response.UserID != "DU94SWSN4ADHHJHF2HXT" {
+		t.Error("Unexpected user id: " + result.Response.UserID)
 	}
 	if result.Response.Username != "49c6c3097adb386048c84354d82ea63d" {
 		t.Error("Unexpected username: " + result.Response.Username)
@@ -334,7 +334,7 @@ func TestEnrollStatus(t *testing.T) {
 // Test a successful preauth with user id.  The client doesn't enforce api requirements,
 // such as requiring only one of user id or username, but we'll cover the username
 // in another test anyway.
-func TestPreauthUserId(t *testing.T) {
+func TestPreauthUserID(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -385,9 +385,9 @@ func TestPreauthUserId(t *testing.T) {
 
 	duo := buildAuthClient(ts.URL, nil)
 
-	res, err := duo.Preauth(PreauthUserId("10"), PreauthIpAddr("127.0.0.1"), PreauthTrustedToken("l33t"))
+	res, err := duo.Preauth(PreauthUserID("10"), PreauthIPAddr("127.0.0.1"), PreauthTrustedDeviceToken("l33t"))
 	if err != nil {
-		t.Error("Failed TestPreauthUserId: " + err.Error())
+		t.Error("Failed TestPreauthUserID: " + err.Error())
 	}
 	if res.Stat != "OK" {
 		t.Error("Unexpected stat: " + res.Stat)
@@ -526,9 +526,9 @@ func TestAuth(t *testing.T) {
 	duo := buildAuthClient(ts.URL, nil)
 
 	res, err := duo.Auth("auto",
-		AuthUserId("user_id value"),
+		AuthUserID("user_id value"),
 		AuthUsername("username value"),
-		AuthIpAddr("40.40.40.10"),
+		AuthIPAddr("40.40.40.10"),
 		AuthAsync(),
 		AuthDevice("primary"),
 		AuthType("request"),

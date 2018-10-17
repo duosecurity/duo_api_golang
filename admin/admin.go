@@ -89,29 +89,23 @@ type U2FToken struct {
 	User           *User
 }
 
-// StringResult models responses containing a simple string.
-type StringResult struct {
-	duoapi.BaseResult
-	Response string
-}
-
 // User methods
 
-// GetUsersLimit sets the limit parameter for a GetUsers request.
+// GetUsersLimit sets the optional limit parameter for a GetUsers request.
 func GetUsersLimit(limit uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("limit", strconv.FormatUint(limit, 10))
 	}
 }
 
-// GetUsersOffset sets the offset parameter for a GetUsers request.
+// GetUsersOffset sets the optional offset parameter for a GetUsers request.
 func GetUsersOffset(offset uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("offset", strconv.FormatUint(offset, 10))
 	}
 }
 
-// GetUsersUsername sets the username parameter for a GetUsers request.
+// GetUsersUsername sets the optional username parameter for a GetUsers request.
 func GetUsersUsername(name string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("username", name)
@@ -219,7 +213,7 @@ func (c *Client) GetUserTokens(userID string) (*GetTokensResult, error) {
 
 // AssociateUserToken calls POST /admin/v1/users/:user_id/tokens
 // See https://duo.com/docs/adminapi#associate-hardware-token-with-user
-func (c *Client) AssociateUserToken(userID, tokenID string) (*StringResult, error) {
+func (c *Client) AssociateUserToken(userID, tokenID string) (*duoapi.StringResult, error) {
 	path := fmt.Sprintf("/admin/v1/users/%s/tokens", userID)
 
 	params := url.Values{}
@@ -230,7 +224,7 @@ func (c *Client) AssociateUserToken(userID, tokenID string) (*StringResult, erro
 		return nil, err
 	}
 
-	result := &StringResult{}
+	result := &duoapi.StringResult{}
 	err = json.Unmarshal(body, result)
 	if err != nil {
 		return nil, err
@@ -306,28 +300,28 @@ func (c *Client) GetGroup(groupID string) (*GetGroupResult, error) {
 
 // Phone methods
 
-// GetPhonesLimit sets the limit parameter for a GetPhones request.
+// GetPhonesLimit sets the optional limit parameter for a GetPhones request.
 func GetPhonesLimit(limit uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("limit", strconv.FormatUint(limit, 10))
 	}
 }
 
-// GetPhonesOffset sets the offset parameter for a GetPhones request.
+// GetPhonesOffset sets the optional offset parameter for a GetPhones request.
 func GetPhonesOffset(offset uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("offset", strconv.FormatUint(offset, 10))
 	}
 }
 
-// GetPhonesNumber sets the number parameter for a GetPhones request.
+// GetPhonesNumber sets the optional number parameter for a GetPhones request.
 func GetPhonesNumber(number string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("number", number)
 	}
 }
 
-// GetPhonesExtension sets the extension parameter for a GetPhones request.
+// GetPhonesExtension sets the optional extension parameter for a GetPhones request.
 func GetPhonesExtension(ext string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("extension", ext)
@@ -387,7 +381,7 @@ func (c *Client) GetPhone(phoneID string) (*GetPhoneResult, error) {
 
 // Token methods
 
-// GetTokensTypeAndSerial sets the type and serial parameters for a GetTokens request.
+// GetTokensTypeAndSerial sets the optional type and serial parameters for a GetTokens request.
 func GetTokensTypeAndSerial(typ, serial string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("type", typ)
@@ -448,14 +442,14 @@ func (c *Client) GetToken(tokenID string) (*GetTokenResult, error) {
 
 // U2F token methods
 
-// GetU2FTokensLimit sets the limit parameter for a GetU2FTokens request.
+// GetU2FTokensLimit sets the optional limit parameter for a GetU2FTokens request.
 func GetU2FTokensLimit(limit uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("limit", strconv.FormatUint(limit, 10))
 	}
 }
 
-// GetU2FTokensOffset sets the offset parameter for a GetU2FTokens request.
+// GetU2FTokensOffset sets the optional offset parameter for a GetU2FTokens request.
 func GetU2FTokensOffset(offset uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("offset", strconv.FormatUint(offset, 10))
