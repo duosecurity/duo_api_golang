@@ -89,6 +89,7 @@ type U2FToken struct {
 	User           *User
 }
 
+// StringResult models responses containing a simple string.
 type StringResult struct {
 	duoapi.BaseResult
 	Response string
@@ -96,24 +97,28 @@ type StringResult struct {
 
 // User methods
 
+// GetUsersLimit sets the limit parameter for a GetUsers request.
 func GetUsersLimit(limit uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("limit", strconv.FormatUint(limit, 10))
 	}
 }
 
+// GetUsersOffset sets the offset parameter for a GetUsers request.
 func GetUsersOffset(offset uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("offset", strconv.FormatUint(offset, 10))
 	}
 }
 
+// GetUsersUsername sets the username parameter for a GetUsers request.
 func GetUsersUsername(name string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("username", name)
 	}
 }
 
+// GetUsersResult models responses containing a list of users.
 type GetUsersResult struct {
 	duoapi.BaseResult
 	Response []User
@@ -253,6 +258,7 @@ func (c *Client) GetUserU2FTokens(userID string) (*GetU2FTokensResult, error) {
 
 // Group methods
 
+// GetGroupsResult models responses containing a list of groups.
 type GetGroupsResult struct {
 	duoapi.BaseResult
 	Response []Group
@@ -274,6 +280,7 @@ func (c *Client) GetGroups() (*GetGroupsResult, error) {
 	return result, nil
 }
 
+// GetGroupResult models responses containing a single group.
 type GetGroupResult struct {
 	duoapi.BaseResult
 	Response Group
@@ -299,30 +306,35 @@ func (c *Client) GetGroup(groupID string) (*GetGroupResult, error) {
 
 // Phone methods
 
+// GetPhonesLimit sets the limit parameter for a GetPhones request.
 func GetPhonesLimit(limit uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("limit", strconv.FormatUint(limit, 10))
 	}
 }
 
+// GetPhonesOffset sets the offset parameter for a GetPhones request.
 func GetPhonesOffset(offset uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("offset", strconv.FormatUint(offset, 10))
 	}
 }
 
+// GetPhonesNumber sets the number parameter for a GetPhones request.
 func GetPhonesNumber(number string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("number", number)
 	}
 }
 
+// GetPhonesExtension sets the extension parameter for a GetPhones request.
 func GetPhonesExtension(ext string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("extension", ext)
 	}
 }
 
+// GetPhonesResult models responses containing a list of phones.
 type GetPhonesResult struct {
 	duoapi.BaseResult
 	Response []Phone
@@ -349,6 +361,7 @@ func (c *Client) GetPhones(options ...func(*url.Values)) (*GetPhonesResult, erro
 	return result, nil
 }
 
+// GetPhoneResult models responses containing a single phone.
 type GetPhoneResult struct {
 	duoapi.BaseResult
 	Response Phone
@@ -374,6 +387,7 @@ func (c *Client) GetPhone(phoneID string) (*GetPhoneResult, error) {
 
 // Token methods
 
+// GetTokensTypeAndSerial sets the type and serial parameters for a GetTokens request.
 func GetTokensTypeAndSerial(typ, serial string) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("type", typ)
@@ -381,6 +395,7 @@ func GetTokensTypeAndSerial(typ, serial string) func(*url.Values) {
 	}
 }
 
+// GetTokensResult models responses containing a list of tokens.
 type GetTokensResult struct {
 	duoapi.BaseResult
 	Response []Token
@@ -407,6 +422,7 @@ func (c *Client) GetTokens(options ...func(*url.Values)) (*GetTokensResult, erro
 	return result, nil
 }
 
+// GetTokenResult models responses containing a single token.
 type GetTokenResult struct {
 	duoapi.BaseResult
 	Response Token
@@ -432,18 +448,21 @@ func (c *Client) GetToken(tokenID string) (*GetTokenResult, error) {
 
 // U2F token methods
 
+// GetU2FTokensLimit sets the limit parameter for a GetU2FTokens request.
 func GetU2FTokensLimit(limit uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("limit", strconv.FormatUint(limit, 10))
 	}
 }
 
+// GetU2FTokensOffset sets the offset parameter for a GetU2FTokens request.
 func GetU2FTokensOffset(offset uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("offset", strconv.FormatUint(offset, 10))
 	}
 }
 
+// GetU2FTokensResult models responses containing a list of U2F tokens.
 type GetU2FTokensResult struct {
 	duoapi.BaseResult
 	Response []U2FToken
