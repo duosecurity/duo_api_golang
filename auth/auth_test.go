@@ -161,8 +161,8 @@ func TestProxy(t *testing.T) {
 	defer ts.Close()
 
 	// Connect through the test proxy.
-	proxy_url, err := url.Parse(ps.URL)
-	duo := buildAuthClient(ts.URL, http.ProxyURL(proxy_url))
+	proxyURL, err := url.Parse(ps.URL)
+	duo := buildAuthClient(ts.URL, http.ProxyURL(proxyURL))
 
 	result, err := duo.Check()
 	if err != nil {
@@ -240,15 +240,15 @@ func TestEnroll(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				req_params, err := getBodyParams(r)
+				reqParams, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
-				if req_params.Get("username") != "49c6c3097adb386048c84354d82ea63d" {
+				if reqParams.Get("username") != "49c6c3097adb386048c84354d82ea63d" {
 					t.Error("TestEnroll failed to set 'username' query parameter:" +
 						r.RequestURI)
 				}
-				if req_params.Get("valid_secs") != "10" {
+				if reqParams.Get("valid_secs") != "10" {
 					t.Error("TestEnroll failed to set 'valid_secs' query parameter: " +
 						r.RequestURI)
 				}
@@ -297,15 +297,15 @@ func TestEnrollStatus(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				req_params, err := getBodyParams(r)
+				reqParams, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
-				if req_params.Get("user_id") != "49c6c3097adb386048c84354d82ea63d" {
+				if reqParams.Get("user_id") != "49c6c3097adb386048c84354d82ea63d" {
 					t.Error("TestEnrollStatus failed to set 'user_id' query parameter:" +
 						r.RequestURI)
 				}
-				if req_params.Get("activation_code") != "10" {
+				if reqParams.Get("activation_code") != "10" {
 					t.Error("TestEnrollStatus failed to set 'activation_code' query parameter: " +
 						r.RequestURI)
 				}
@@ -338,19 +338,19 @@ func TestPreauthUserID(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				req_params, err := getBodyParams(r)
+				reqParams, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
-				if req_params.Get("ipaddr") != "127.0.0.1" {
+				if reqParams.Get("ipaddr") != "127.0.0.1" {
 					t.Error("TestPreauth failed to set 'ipaddr' query parameter:" +
 						r.RequestURI)
 				}
-				if req_params.Get("user_id") != "10" {
+				if reqParams.Get("user_id") != "10" {
 					t.Error("TestEnrollStatus failed to set 'user_id' query parameter: " +
 						r.RequestURI)
 				}
-				if req_params.Get("trusted_device_token") != "l33t" {
+				if reqParams.Get("trusted_device_token") != "l33t" {
 					t.Error("TestEnrollStatus failed to set 'trusted_device_token' query parameter: " +
 						r.RequestURI)
 				}
@@ -444,11 +444,11 @@ func TestPreauthEnroll(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				req_params, err := getBodyParams(r)
+				reqParams, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
-				if req_params.Get("username") != "10" {
+				if reqParams.Get("username") != "10" {
 					t.Error("TestEnrollStatus failed to set 'username' query parameter: " +
 						r.RequestURI)
 				}
@@ -491,7 +491,7 @@ func TestAuth(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				req_params, err := getBodyParams(r)
+				reqParams, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
@@ -506,7 +506,7 @@ func TestAuth(t *testing.T) {
 					"display_username": "display username",
 				}
 				for key, value := range expected {
-					if req_params.Get(key) != value {
+					if reqParams.Get(key) != value {
 						t.Errorf("TestAuth failed to set '%s' query parameter: "+
 							r.RequestURI, key)
 					}
