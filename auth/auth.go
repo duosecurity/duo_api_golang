@@ -22,7 +22,7 @@ func New(base duoapi.BaseClient) *Client {
 
 // Return object for the 'Ping' API call.
 type PingResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response struct {
 		Time int64
 	}
@@ -45,7 +45,7 @@ func (c *Client) Ping() (*PingResult, error) {
 
 // Return object for the 'Check' API call.
 type CheckResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response struct {
 		Time int64
 	}
@@ -69,7 +69,7 @@ func (c *Client) Check() (*CheckResult, error) {
 
 // Return object for the 'Logo' API call.
 type LogoResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	png *[]byte
 }
 
@@ -82,7 +82,7 @@ func (c *Client) Logo() (*LogoResult, error) {
 		return nil, err
 	}
 	if resp.StatusCode == 200 {
-		ret := &LogoResult{APIResult: duoapi.APIResult{Stat: "OK"},
+		ret := &LogoResult{BaseResult: duoapi.BaseResult{Stat: "OK"},
 			png: &body}
 		return ret, nil
 	}
@@ -109,7 +109,7 @@ func EnrollValidSeconds(secs uint64) func(*url.Values) {
 
 // Enroll return type.
 type EnrollResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response struct {
 		Activation_Barcode string
 		Activation_Code    string
@@ -142,7 +142,7 @@ func (c *Client) Enroll(options ...func(*url.Values)) (*EnrollResult, error) {
 
 // Response is "success", "invalid" or "waiting".
 type EnrollStatusResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response string
 }
 
@@ -167,7 +167,7 @@ func (c *Client) EnrollStatus(userid string, activationCode string) (*EnrollStat
 
 // Preauth return type.
 type PreauthResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response struct {
 		Result          string
 		StatusMsg       string `json:"status_msg"`
@@ -286,7 +286,7 @@ func AuthPasscode(passcode string) func(*url.Values) {
 
 // Auth return type.
 type AuthResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response struct {
 		// Synchronous
 		Result             string
@@ -341,7 +341,7 @@ func (c *Client) Auth(factor string, options ...func(*url.Values)) (*AuthResult,
 
 // AuthStatus return type.
 type AuthStatusResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response struct {
 		Result             string
 		Status             string

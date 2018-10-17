@@ -147,10 +147,11 @@ func (c *BaseClient) buildOptions(options ...DuoApiOption) *requestOptions {
 	return opts
 }
 
-// API calls will return an APIResult object.  On success, Stat is 'OK'.
-// On error, Stat is 'FAIL', and Code, Message, and MessageDetail
-// contain error information.
-type APIResult struct {
+// BaseResult models the shared response structure for Duo API requests. On a
+// successful request, Stat is "OK" and the other fields are nil. On a failed
+// request, Stat is "FAIL" and Code, Message, and MessageDetail will contain
+// error information.
+type BaseResult struct {
 	Stat          string
 	Code          *int32
 	Message       *string

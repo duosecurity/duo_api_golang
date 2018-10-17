@@ -90,7 +90,7 @@ type U2FToken struct {
 }
 
 type StringResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response string
 }
 
@@ -115,7 +115,7 @@ func GetUsersUsername(name string) func(*url.Values) {
 }
 
 type GetUsersResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response []User
 }
 
@@ -254,7 +254,7 @@ func (c *Client) GetUserU2FTokens(userID string) (*GetU2FTokensResult, error) {
 // Group methods
 
 type GetGroupsResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response []Group
 }
 
@@ -275,7 +275,7 @@ func (c *Client) GetGroups() (*GetGroupsResult, error) {
 }
 
 type GetGroupResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response Group
 }
 
@@ -324,7 +324,7 @@ func GetPhonesExtension(ext string) func(*url.Values) {
 }
 
 type GetPhonesResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response []Phone
 }
 
@@ -350,7 +350,7 @@ func (c *Client) GetPhones(options ...func(*url.Values)) (*GetPhonesResult, erro
 }
 
 type GetPhoneResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response Phone
 }
 
@@ -382,7 +382,7 @@ func GetTokensTypeAndSerial(typ, serial string) func(*url.Values) {
 }
 
 type GetTokensResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response []Token
 }
 
@@ -408,7 +408,7 @@ func (c *Client) GetTokens(options ...func(*url.Values)) (*GetTokensResult, erro
 }
 
 type GetTokenResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response Token
 }
 
@@ -445,7 +445,7 @@ func GetU2FTokensOffset(offset uint64) func(*url.Values) {
 }
 
 type GetU2FTokensResult struct {
-	duoapi.APIResult
+	duoapi.BaseResult
 	Response []U2FToken
 }
 
