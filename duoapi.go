@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var spaceReplacer = strings.NewReplacer("+", "%20")
+var spaceReplacer *strings.Replacer = strings.NewReplacer("+", "%20")
 
 func canonParams(params url.Values) string {
 	// Values must be in sorted order
@@ -24,12 +24,16 @@ func canonParams(params url.Values) string {
 		params[key] = val
 	}
 	// Encode will place Keys in sorted order
-	orderedParams := params.Encode()
+	ordered_params := params.Encode()
 	// Encoder turns spaces into +, but we need %XX escaping
-	return spaceReplacer.Replace(orderedParams)
+	return spaceReplacer.Replace(ordered_params)
 }
 
-func canonicalize(method string, host string, uri string, params url.Values, date string) string {
+func canonicalize(method string,
+	host string,
+	uri string,
+	params url.Values,
+	date string) string {
 	var canon [5]string
 	canon[0] = date
 	canon[1] = strings.ToUpper(method)
@@ -39,7 +43,13 @@ func canonicalize(method string, host string, uri string, params url.Values, dat
 	return strings.Join(canon[:], "\n")
 }
 
-func sign(ikey string, skey string, method string, host string, uri string, date string, params url.Values) string {
+func sign(ikey string,
+	skey string,
+	method string,
+	host string,
+	uri string,
+	date string,
+	params url.Values) string {
 	canon := canonicalize(method, host, uri, params, date)
 	mac := hmac.New(sha1.New, []byte(skey))
 	mac.Write([]byte(canon))
@@ -48,7 +58,7 @@ func sign(ikey string, skey string, method string, host string, uri string, date
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
-type BaseClient struct {
+type DuoApi struct {
 	ikey       string
 	skey       string
 	host       string
@@ -71,7 +81,7 @@ func SetTimeout(timeout time.Duration) func(*apiOptions) {
 	}
 }
 
-// Optional parameter for testing only. Bypasses all TLS certificate validation.
+// Optional parameter for testing only.  Bypasses all TLS certificate validation.
 func SetInsecure() func(*apiOptions) {
 	return func(opts *apiOptions) {
 		opts.insecure = true
@@ -95,8 +105,12 @@ func SetProxy(proxy func(*http.Request) (*url.URL, error)) func(*apiOptions) {
 // options are optional parameters.  Use SetTimeout() to specify a timeout value
 //         for Rest API calls.  Use SetProxy() to specify proxy settings for Duo API calls.
 //
-// Example: duoapi.New(ikey,skey,host,userAgent,duoapi.SetTimeout(10*time.Second))
-func New(ikey string, skey string, host string, userAgent string, options ...func(*apiOptions)) *BaseClient {
+// Example: duoapi.NewDuoApi(ikey,skey,host,userAgent,duoapi.SetTimeout(10*time.Second))
+func NewDuoApi(ikey string,
+	skey string,
+	host string,
+	userAgent string,
+	options ...func(*apiOptions)) *DuoApi {
 	opts := apiOptions{proxy: http.ProxyFromEnvironment}
 	for _, o := range options {
 		o(&opts)
@@ -113,7 +127,7 @@ func New(ikey string, skey string, host string, userAgent string, options ...fun
 			InsecureSkipVerify: opts.insecure,
 		},
 	}
-	return &BaseClient{
+	return &DuoApi{
 		ikey:      ikey,
 		skey:      skey,
 		host:      host,
@@ -139,7 +153,7 @@ func UseTimeout(opts *requestOptions) {
 	opts.timeout = true
 }
 
-func (c *BaseClient) buildOptions(options ...DuoApiOption) *requestOptions {
+func (duoapi *DuoApi) buildOptions(options ...DuoApiOption) *requestOptions {
 	opts := &requestOptions{}
 	for _, o := range options {
 		o(opts)
@@ -147,21 +161,14 @@ func (c *BaseClient) buildOptions(options ...DuoApiOption) *requestOptions {
 	return opts
 }
 
-// BaseResult models the shared response structure for Duo API requests. On a
-// successful request, Stat is "OK" and the other fields are nil. On a failed
-// request, Stat is "FAIL" and Code, Message, and MessageDetail will contain
-// error information.
-type BaseResult struct {
-	Stat          string
-	Code          *int32
-	Message       *string
-	MessageDetail *string `json:"message_detail"`
-}
-
-// StringResult models responses containing a simple string.
-type StringResult struct {
-	BaseResult
-	Response string
+// API calls will return a StatResult object.  On success, Stat is 'OK'.
+// On error, Stat is 'FAIL', and Code, Message, and Message_Detail
+// contain error information.
+type StatResult struct {
+	Stat           string
+	Code           *int32
+	Message        *string
+	Message_Detail *string
 }
 
 // Make an unsigned Duo Rest API call.  See Duo's online documentation
@@ -173,17 +180,20 @@ type StringResult struct {
 //         Duo Rest API call should timeout or not.
 //
 // Example: duo.Call("GET", "/auth/v2/ping", nil, duoapi.UseTimeout)
-func (c *BaseClient) Call(method string, uri string, params url.Values, options ...DuoApiOption) (*http.Response, []byte, error) {
-	opts := c.buildOptions(options...)
+func (duoapi *DuoApi) Call(method string,
+	uri string,
+	params url.Values,
+	options ...DuoApiOption) (*http.Response, []byte, error) {
+	opts := duoapi.buildOptions(options...)
 
-	client := c.authClient
+	client := duoapi.authClient
 	if opts.timeout {
-		client = c.apiClient
+		client = duoapi.apiClient
 	}
 
 	url := url.URL{
 		Scheme:   "https",
-		Host:     c.host,
+		Host:     duoapi.host,
 		Path:     uri,
 		RawQuery: params.Encode(),
 	}
@@ -209,15 +219,18 @@ func (c *BaseClient) Call(method string, uri string, params url.Values, options 
 //         Duo Rest API call should timeout or not.
 //
 // Example: duo.SignedCall("GET", "/auth/v2/check", nil, duoapi.UseTimeout)
-func (c *BaseClient) SignedCall(method string, uri string, params url.Values, options ...DuoApiOption) (*http.Response, []byte, error) {
-	opts := c.buildOptions(options...)
+func (duoapi *DuoApi) SignedCall(method string,
+	uri string,
+	params url.Values,
+	options ...DuoApiOption) (*http.Response, []byte, error) {
+	opts := duoapi.buildOptions(options...)
 
 	now := time.Now().UTC().Format(time.RFC1123Z)
-	authSig := sign(c.ikey, c.skey, method, c.host, uri, now, params)
+	auth_sig := sign(duoapi.ikey, duoapi.skey, method, duoapi.host, uri, now, params)
 
 	url := url.URL{
 		Scheme: "https",
-		Host:   c.host,
+		Host:   duoapi.host,
 		Path:   uri,
 	}
 	method = strings.ToUpper(method)
@@ -230,7 +243,7 @@ func (c *BaseClient) SignedCall(method string, uri string, params url.Values, op
 	if err != nil {
 		return nil, nil, err
 	}
-	request.Header.Set("Authorization", authSig)
+	request.Header.Set("Authorization", auth_sig)
 	request.Header.Set("Date", now)
 
 	if method == "POST" || method == "PUT" {
@@ -238,9 +251,9 @@ func (c *BaseClient) SignedCall(method string, uri string, params url.Values, op
 		request.Header.Set("Content-type", "application/x-www-form-urlencoded")
 	}
 
-	client := c.authClient
+	client := duoapi.authClient
 	if opts.timeout {
-		client = c.apiClient
+		client = duoapi.apiClient
 	}
 	resp, err := client.Do(request)
 	var body []byte

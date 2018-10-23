@@ -11,12 +11,12 @@ func TestCanonicalize(t *testing.T) {
 	values.Set("username", "H ell?o")
 	values.Set("password", "H-._~i")
 	values.Add("password", "A(!'*)")
-	paramsStr := canonicalize("post",
+	params_str := canonicalize("post",
 		"API-XXX.duosecurity.COM",
 		"/auth/v2/ping",
 		values,
 		"5")
-	params := strings.Split(paramsStr, "\n")
+	params := strings.Split(params_str, "\n")
 	if len(params) != 5 {
 		t.Error("Expected 5 parameters, but got " + string(len(params)))
 	}
@@ -148,8 +148,8 @@ func TestV2Canonicalize(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
-	duo := New("ABC", "123", "api-XXXXXXX.duosecurity.com", "go-client")
+func TestNewDuo(t *testing.T) {
+	duo := NewDuoApi("ABC", "123", "api-XXXXXXX.duosecurity.com", "go-client")
 	if duo == nil {
 		t.Fatal("Failed to create a new Duo Api")
 	}

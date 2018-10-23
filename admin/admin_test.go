@@ -18,7 +18,7 @@ func buildAdminClient(url string, proxy func(*http.Request) (*url.URL, error)) *
 	skey := "esskey"
 	host := strings.Split(url, "//")[1]
 	userAgent := "GoTestClient"
-	base := duoapi.New(ikey, skey, host, userAgent, duoapi.SetTimeout(1*time.Second), duoapi.SetInsecure(), duoapi.SetProxy(proxy))
+	base := duoapi.NewDuoApi(ikey, skey, host, userAgent, duoapi.SetTimeout(1*time.Second), duoapi.SetInsecure(), duoapi.SetProxy(proxy))
 	return New(*base)
 }
 

@@ -1,4 +1,4 @@
-package auth
+package authapi
 
 import (
 	"fmt"
@@ -15,13 +15,18 @@ import (
 	"github.com/duosecurity/duo_api_golang"
 )
 
-func buildAuthClient(url string, proxy func(*http.Request) (*url.URL, error)) *Client {
+func buildAuthApi(url string, proxy func(*http.Request) (*url.URL, error)) *AuthApi {
 	ikey := "eyekey"
 	skey := "esskey"
 	host := strings.Split(url, "//")[1]
 	userAgent := "GoTestClient"
-	base := duoapi.New(ikey, skey, host, userAgent, duoapi.SetTimeout(1*time.Second), duoapi.SetInsecure(), duoapi.SetProxy(proxy))
-	return New(*base)
+	return NewAuthApi(*duoapi.NewDuoApi(ikey,
+		skey,
+		host,
+		userAgent,
+		duoapi.SetTimeout(1*time.Second),
+		duoapi.SetInsecure(),
+		duoapi.SetProxy(proxy)))
 }
 
 func getBodyParams(r *http.Request) (url.Values, error) {
@@ -30,8 +35,8 @@ func getBodyParams(r *http.Request) (url.Values, error) {
 	if err != nil {
 		return url.Values{}, err
 	}
-	reqParams, err := url.ParseQuery(string(body))
-	return reqParams, err
+	req_params, err := url.ParseQuery(string(body))
+	return req_params, err
 }
 
 // Timeouts are set to 1 second.  Take 15 seconds to respond and verify
@@ -41,7 +46,7 @@ func TestTimeout(t *testing.T) {
 		time.Sleep(15 * time.Second)
 	}))
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	start := time.Now()
 	_, err := duo.Ping()
@@ -68,7 +73,7 @@ func TestPing(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	result, err := duo.Ping()
 	if err != nil {
@@ -97,7 +102,7 @@ func TestCheck(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	result, err := duo.Check()
 	if err != nil {
@@ -161,8 +166,8 @@ func TestProxy(t *testing.T) {
 	defer ts.Close()
 
 	// Connect through the test proxy.
-	proxyURL, err := url.Parse(ps.URL)
-	duo := buildAuthClient(ts.URL, http.ProxyURL(proxyURL))
+	proxy_url, err := url.Parse(ps.URL)
+	duo := buildAuthApi(ts.URL, http.ProxyURL(proxy_url))
 
 	result, err := duo.Check()
 	if err != nil {
@@ -190,7 +195,7 @@ func TestLogo(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	_, err := duo.Logo()
 	if err != nil {
@@ -215,7 +220,7 @@ func TestLogoError(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.Logo()
 	if err != nil {
@@ -230,7 +235,7 @@ func TestLogoError(t *testing.T) {
 	if res.Message == nil || *res.Message != "Logo not found" {
 		t.Error("Unexpected message.")
 	}
-	if res.MessageDetail == nil || *res.MessageDetail != "Why u no have logo?" {
+	if res.Message_Detail == nil || *res.Message_Detail != "Why u no have logo?" {
 		t.Error("Unexpected message detail.")
 	}
 }
@@ -240,15 +245,15 @@ func TestEnroll(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				reqParams, err := getBodyParams(r)
+				req_params, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
-				if reqParams.Get("username") != "49c6c3097adb386048c84354d82ea63d" {
+				if req_params.Get("username") != "49c6c3097adb386048c84354d82ea63d" {
 					t.Error("TestEnroll failed to set 'username' query parameter:" +
 						r.RequestURI)
 				}
-				if reqParams.Get("valid_secs") != "10" {
+				if req_params.Get("valid_secs") != "10" {
 					t.Error("TestEnroll failed to set 'valid_secs' query parameter: " +
 						r.RequestURI)
 				}
@@ -266,7 +271,7 @@ func TestEnroll(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	result, err := duo.Enroll(EnrollUsername("49c6c3097adb386048c84354d82ea63d"), EnrollValidSeconds(10))
 	if err != nil {
@@ -275,17 +280,17 @@ func TestEnroll(t *testing.T) {
 	if result.Stat != "OK" {
 		t.Error("Expected OK, but got " + result.Stat)
 	}
-	if result.Response.ActivationBarcode != "https://api-eval.duosecurity.com/frame/qr?value=8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA" {
-		t.Error("Unexpected activation_barcode: " + result.Response.ActivationBarcode)
+	if result.Response.Activation_Barcode != "https://api-eval.duosecurity.com/frame/qr?value=8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA" {
+		t.Error("Unexpected activation_barcode: " + result.Response.Activation_Barcode)
 	}
-	if result.Response.ActivationCode != "duo://8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA" {
-		t.Error("Unexpected activation code: " + result.Response.ActivationCode)
+	if result.Response.Activation_Code != "duo://8LIRa5danrICkhHtkLxi-cKLu2DWzDYCmBwBHY2YzW5ZYnYaRxA" {
+		t.Error("Unexpected activation code: " + result.Response.Activation_Code)
 	}
 	if result.Response.Expiration != 1357020061 {
 		t.Errorf("Unexpected expiration time: %d", result.Response.Expiration)
 	}
-	if result.Response.UserID != "DU94SWSN4ADHHJHF2HXT" {
-		t.Error("Unexpected user id: " + result.Response.UserID)
+	if result.Response.User_Id != "DU94SWSN4ADHHJHF2HXT" {
+		t.Error("Unexpected user id: " + result.Response.User_Id)
 	}
 	if result.Response.Username != "49c6c3097adb386048c84354d82ea63d" {
 		t.Error("Unexpected username: " + result.Response.Username)
@@ -297,15 +302,15 @@ func TestEnrollStatus(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				reqParams, err := getBodyParams(r)
+				req_params, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
-				if reqParams.Get("user_id") != "49c6c3097adb386048c84354d82ea63d" {
+				if req_params.Get("user_id") != "49c6c3097adb386048c84354d82ea63d" {
 					t.Error("TestEnrollStatus failed to set 'user_id' query parameter:" +
 						r.RequestURI)
 				}
-				if reqParams.Get("activation_code") != "10" {
+				if req_params.Get("activation_code") != "10" {
 					t.Error("TestEnrollStatus failed to set 'activation_code' query parameter: " +
 						r.RequestURI)
 				}
@@ -317,7 +322,7 @@ func TestEnrollStatus(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	result, err := duo.EnrollStatus("49c6c3097adb386048c84354d82ea63d", "10")
 	if err != nil {
@@ -334,23 +339,23 @@ func TestEnrollStatus(t *testing.T) {
 // Test a successful preauth with user id.  The client doesn't enforce api requirements,
 // such as requiring only one of user id or username, but we'll cover the username
 // in another test anyway.
-func TestPreauthUserID(t *testing.T) {
+func TestPreauthUserId(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				reqParams, err := getBodyParams(r)
+				req_params, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
-				if reqParams.Get("ipaddr") != "127.0.0.1" {
+				if req_params.Get("ipaddr") != "127.0.0.1" {
 					t.Error("TestPreauth failed to set 'ipaddr' query parameter:" +
 						r.RequestURI)
 				}
-				if reqParams.Get("user_id") != "10" {
+				if req_params.Get("user_id") != "10" {
 					t.Error("TestEnrollStatus failed to set 'user_id' query parameter: " +
 						r.RequestURI)
 				}
-				if reqParams.Get("trusted_device_token") != "l33t" {
+				if req_params.Get("trusted_device_token") != "l33t" {
 					t.Error("TestEnrollStatus failed to set 'trusted_device_token' query parameter: " +
 						r.RequestURI)
 				}
@@ -383,11 +388,11 @@ func TestPreauthUserID(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
-	res, err := duo.Preauth(PreauthUserID("10"), PreauthIPAddr("127.0.0.1"), PreauthTrustedDeviceToken("l33t"))
+	res, err := duo.Preauth(PreauthUserId("10"), PreauthIpAddr("127.0.0.1"), PreauthTrustedToken("l33t"))
 	if err != nil {
-		t.Error("Failed TestPreauthUserID: " + err.Error())
+		t.Error("Failed TestPreauthUserId: " + err.Error())
 	}
 	if res.Stat != "OK" {
 		t.Error("Unexpected stat: " + res.Stat)
@@ -395,8 +400,8 @@ func TestPreauthUserID(t *testing.T) {
 	if res.Response.Result != "auth" {
 		t.Error("Unexpected response result: " + res.Response.Result)
 	}
-	if res.Response.StatusMsg != "Account is active" {
-		t.Error("Unexpected status message: " + res.Response.StatusMsg)
+	if res.Response.Status_Msg != "Account is active" {
+		t.Error("Unexpected status message: " + res.Response.Status_Msg)
 	}
 	if len(res.Response.Devices) != 2 {
 		t.Errorf("Unexpected devices length: %d", len(res.Response.Devices))
@@ -444,11 +449,11 @@ func TestPreauthEnroll(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				reqParams, err := getBodyParams(r)
+				req_params, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
-				if reqParams.Get("username") != "10" {
+				if req_params.Get("username") != "10" {
 					t.Error("TestEnrollStatus failed to set 'username' query parameter: " +
 						r.RequestURI)
 				}
@@ -464,7 +469,7 @@ func TestPreauthEnroll(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.Preauth(PreauthUsername("10"))
 	if err != nil {
@@ -473,14 +478,14 @@ func TestPreauthEnroll(t *testing.T) {
 	if res.Stat != "OK" {
 		t.Error("Unexpected stat: " + res.Stat)
 	}
-	if res.Response.EnrollPortalURL != "https://api-3945ef22.duosecurity.com/portal?48bac5d9393fb2c2" {
-		t.Error("Unexpected enroll portal URL: " + res.Response.EnrollPortalURL)
+	if res.Response.Enroll_Portal_Url != "https://api-3945ef22.duosecurity.com/portal?48bac5d9393fb2c2" {
+		t.Error("Unexpected enroll portal URL: " + res.Response.Enroll_Portal_Url)
 	}
 	if res.Response.Result != "enroll" {
 		t.Error("Unexpected response result: " + res.Response.Result)
 	}
-	if res.Response.StatusMsg != "Enroll an authentication device to proceed" {
-		t.Error("Unexpected status msg: " + res.Response.StatusMsg)
+	if res.Response.Status_Msg != "Enroll an authentication device to proceed" {
+		t.Error("Unexpected status msg: " + res.Response.Status_Msg)
 	}
 }
 
@@ -491,7 +496,7 @@ func TestAuth(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
-				reqParams, err := getBodyParams(r)
+				req_params, err := getBodyParams(r)
 				if err != nil {
 					t.Error("Failed to retrieve body parameters")
 				}
@@ -506,7 +511,7 @@ func TestAuth(t *testing.T) {
 					"display_username": "display username",
 				}
 				for key, value := range expected {
-					if reqParams.Get(key) != value {
+					if req_params.Get(key) != value {
 						t.Errorf("TestAuth failed to set '%s' query parameter: "+
 							r.RequestURI, key)
 					}
@@ -523,12 +528,12 @@ func TestAuth(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.Auth("auto",
-		AuthUserID("user_id value"),
+		AuthUserId("user_id value"),
 		AuthUsername("username value"),
-		AuthIPAddr("40.40.40.10"),
+		AuthIpAddr("40.40.40.10"),
 		AuthAsync(),
 		AuthDevice("primary"),
 		AuthType("request"),
@@ -546,8 +551,8 @@ func TestAuth(t *testing.T) {
 	if res.Response.Status != "allow" {
 		t.Error("Unexpected response status: " + res.Response.Status)
 	}
-	if res.Response.StatusMsg != "Success. Logging you in..." {
-		t.Error("Unexpected response status msg: " + res.Response.StatusMsg)
+	if res.Response.Status_Msg != "Success. Logging you in..." {
+		t.Error("Unexpected response status msg: " + res.Response.Status_Msg)
 	}
 }
 
@@ -577,7 +582,7 @@ func TestAuthStatus(t *testing.T) {
 			}))
 	defer ts.Close()
 
-	duo := buildAuthClient(ts.URL, nil)
+	duo := buildAuthApi(ts.URL, nil)
 
 	res, err := duo.AuthStatus("4")
 	if err != nil {
@@ -593,7 +598,7 @@ func TestAuthStatus(t *testing.T) {
 	if res.Response.Status != "pushed" {
 		t.Error("Unexpected response status: " + res.Response.Status)
 	}
-	if res.Response.StatusMsg != "Pushed a login request to your phone..." {
-		t.Error("Unexpected response status msg: " + res.Response.StatusMsg)
+	if res.Response.Status_Msg != "Pushed a login request to your phone..." {
+		t.Error("Unexpected response status msg: " + res.Response.Status_Msg)
 	}
 }

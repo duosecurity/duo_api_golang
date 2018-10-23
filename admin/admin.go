@@ -12,11 +12,11 @@ import (
 
 // Client provides access to Duo's admin API.
 type Client struct {
-	duoapi.BaseClient
+	duoapi.DuoApi
 }
 
 // New initializes an admin API Client struct.
-func New(base duoapi.BaseClient) *Client {
+func New(base duoapi.DuoApi) *Client {
 	return &Client{base}
 }
 
@@ -114,7 +114,7 @@ func GetUsersUsername(name string) func(*url.Values) {
 
 // GetUsersResult models responses containing a list of users.
 type GetUsersResult struct {
-	duoapi.BaseResult
+	duoapi.StatResult
 	Response []User
 }
 
@@ -211,9 +211,15 @@ func (c *Client) GetUserTokens(userID string) (*GetTokensResult, error) {
 	return result, nil
 }
 
+// StringResult models responses containing a simple string.
+type StringResult struct {
+	duoapi.StatResult
+	Response string
+}
+
 // AssociateUserToken calls POST /admin/v1/users/:user_id/tokens
 // See https://duo.com/docs/adminapi#associate-hardware-token-with-user
-func (c *Client) AssociateUserToken(userID, tokenID string) (*duoapi.StringResult, error) {
+func (c *Client) AssociateUserToken(userID, tokenID string) (*StringResult, error) {
 	path := fmt.Sprintf("/admin/v1/users/%s/tokens", userID)
 
 	params := url.Values{}
@@ -224,7 +230,7 @@ func (c *Client) AssociateUserToken(userID, tokenID string) (*duoapi.StringResul
 		return nil, err
 	}
 
-	result := &duoapi.StringResult{}
+	result := &StringResult{}
 	err = json.Unmarshal(body, result)
 	if err != nil {
 		return nil, err
@@ -254,7 +260,7 @@ func (c *Client) GetUserU2FTokens(userID string) (*GetU2FTokensResult, error) {
 
 // GetGroupsResult models responses containing a list of groups.
 type GetGroupsResult struct {
-	duoapi.BaseResult
+	duoapi.StatResult
 	Response []Group
 }
 
@@ -276,7 +282,7 @@ func (c *Client) GetGroups() (*GetGroupsResult, error) {
 
 // GetGroupResult models responses containing a single group.
 type GetGroupResult struct {
-	duoapi.BaseResult
+	duoapi.StatResult
 	Response Group
 }
 
@@ -330,7 +336,7 @@ func GetPhonesExtension(ext string) func(*url.Values) {
 
 // GetPhonesResult models responses containing a list of phones.
 type GetPhonesResult struct {
-	duoapi.BaseResult
+	duoapi.StatResult
 	Response []Phone
 }
 
@@ -357,7 +363,7 @@ func (c *Client) GetPhones(options ...func(*url.Values)) (*GetPhonesResult, erro
 
 // GetPhoneResult models responses containing a single phone.
 type GetPhoneResult struct {
-	duoapi.BaseResult
+	duoapi.StatResult
 	Response Phone
 }
 
@@ -391,7 +397,7 @@ func GetTokensTypeAndSerial(typ, serial string) func(*url.Values) {
 
 // GetTokensResult models responses containing a list of tokens.
 type GetTokensResult struct {
-	duoapi.BaseResult
+	duoapi.StatResult
 	Response []Token
 }
 
@@ -418,7 +424,7 @@ func (c *Client) GetTokens(options ...func(*url.Values)) (*GetTokensResult, erro
 
 // GetTokenResult models responses containing a single token.
 type GetTokenResult struct {
-	duoapi.BaseResult
+	duoapi.StatResult
 	Response Token
 }
 
@@ -458,7 +464,7 @@ func GetU2FTokensOffset(offset uint64) func(*url.Values) {
 
 // GetU2FTokensResult models responses containing a list of U2F tokens.
 type GetU2FTokensResult struct {
-	duoapi.BaseResult
+	duoapi.StatResult
 	Response []U2FToken
 }
 
