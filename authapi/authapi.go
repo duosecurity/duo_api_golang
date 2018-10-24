@@ -19,6 +19,15 @@ func NewAuthApi(api duoapi.DuoApi) *AuthApi {
 	return &AuthApi{api}
 }
 
+// Leaving for backwards compatibility.
+// The struct in use has been moved to the duoapi package, to be shared between the admin and authapi packages.
+type StatResult struct {
+	Stat           string
+	Code           *int32
+	Message        *string
+	Message_Detail *string
+}
+
 // Return object for the 'Ping' API call.
 type PingResult struct {
 	duoapi.StatResult

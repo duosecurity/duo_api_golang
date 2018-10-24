@@ -89,21 +89,23 @@ type U2FToken struct {
 	User           *User
 }
 
-// User methods
+// Common URL options
 
-// GetUsersLimit sets the optional limit parameter for a GetUsers request.
-func GetUsersLimit(limit uint64) func(*url.Values) {
+// Limit sets the optional limit parameter for an API request.
+func Limit(limit uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("limit", strconv.FormatUint(limit, 10))
 	}
 }
 
-// GetUsersOffset sets the optional offset parameter for a GetUsers request.
-func GetUsersOffset(offset uint64) func(*url.Values) {
+// Offset sets the optional offset parameter for an API request.
+func Offset(offset uint64) func(*url.Values) {
 	return func(opts *url.Values) {
 		opts.Set("offset", strconv.FormatUint(offset, 10))
 	}
 }
+
+// User methods
 
 // GetUsersUsername sets the optional username parameter for a GetUsers request.
 func GetUsersUsername(name string) func(*url.Values) {
@@ -306,20 +308,6 @@ func (c *Client) GetGroup(groupID string) (*GetGroupResult, error) {
 
 // Phone methods
 
-// GetPhonesLimit sets the optional limit parameter for a GetPhones request.
-func GetPhonesLimit(limit uint64) func(*url.Values) {
-	return func(opts *url.Values) {
-		opts.Set("limit", strconv.FormatUint(limit, 10))
-	}
-}
-
-// GetPhonesOffset sets the optional offset parameter for a GetPhones request.
-func GetPhonesOffset(offset uint64) func(*url.Values) {
-	return func(opts *url.Values) {
-		opts.Set("offset", strconv.FormatUint(offset, 10))
-	}
-}
-
 // GetPhonesNumber sets the optional number parameter for a GetPhones request.
 func GetPhonesNumber(number string) func(*url.Values) {
 	return func(opts *url.Values) {
@@ -447,20 +435,6 @@ func (c *Client) GetToken(tokenID string) (*GetTokenResult, error) {
 }
 
 // U2F token methods
-
-// GetU2FTokensLimit sets the optional limit parameter for a GetU2FTokens request.
-func GetU2FTokensLimit(limit uint64) func(*url.Values) {
-	return func(opts *url.Values) {
-		opts.Set("limit", strconv.FormatUint(limit, 10))
-	}
-}
-
-// GetU2FTokensOffset sets the optional offset parameter for a GetU2FTokens request.
-func GetU2FTokensOffset(offset uint64) func(*url.Values) {
-	return func(opts *url.Values) {
-		opts.Set("offset", strconv.FormatUint(offset, 10))
-	}
-}
 
 // GetU2FTokensResult models responses containing a list of U2F tokens.
 type GetU2FTokensResult struct {
