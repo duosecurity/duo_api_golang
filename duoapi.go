@@ -161,6 +161,16 @@ func (duoapi *DuoApi) buildOptions(options ...DuoApiOption) *requestOptions {
 	return opts
 }
 
+// API calls will return a StatResult object.  On success, Stat is 'OK'.
+// On error, Stat is 'FAIL', and Code, Message, and Message_Detail
+// contain error information.
+type StatResult struct {
+	Stat           string
+	Code           *int32
+	Message        *string
+	Message_Detail *string
+}
+
 // Make an unsigned Duo Rest API call.  See Duo's online documentation
 // for the available REST API's.
 // method is POST or GET
