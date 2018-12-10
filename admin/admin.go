@@ -15,6 +15,20 @@ type Client struct {
 	duoapi.DuoApi
 }
 
+type ListResultMetadata struct {
+	NextOffset   json.Number `json:"next_offset"`
+	PrevOffset   json.Number `json:"prev_offset"`
+	TotalObjects json.Number `json:"total_objects"`
+}
+
+type ListResult struct {
+	Metadata ListResultMetadata `json:"metadata"`
+}
+
+func (l *ListResult) metadata() ListResultMetadata {
+	return l.Metadata
+}
+
 // New initializes an admin API Client struct.
 func New(base duoapi.DuoApi) *Client {
 	return &Client{base}
@@ -117,7 +131,17 @@ func GetUsersUsername(name string) func(*url.Values) {
 // GetUsersResult models responses containing a list of users.
 type GetUsersResult struct {
 	duoapi.StatResult
+	ListResult
 	Response []User
+}
+
+func (result *GetUsersResult) getResponse() interface{} {
+	return result.Response
+}
+
+func (result *GetUsersResult) appendResponse(users interface{}) {
+	asserted_users := users.([]User)
+	result.Response = append(result.Response, asserted_users...)
 }
 
 // GetUsers calls GET /admin/v1/users
@@ -128,6 +152,58 @@ func (c *Client) GetUsers(options ...func(*url.Values)) (*GetUsersResult, error)
 		o(&params)
 	}
 
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrieveUsers(params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetUsersResult), nil
+}
+
+type responsePage interface {
+	metadata() ListResultMetadata
+	getResponse() interface{}
+	appendResponse(interface{})
+}
+
+type pageFetcher func(params url.Values) (responsePage, error)
+
+func (c *Client) retrieveItems(
+	params url.Values,
+	fetcher pageFetcher,
+) (responsePage, error) {
+	if params.Get("offset") == "" {
+		params.Set("offset", "0")
+	}
+
+	if params.Get("limit") == "" {
+		params.Set("limit", "100")
+		accumulator, firstErr := fetcher(params)
+
+		if firstErr != nil {
+			return nil, firstErr
+		}
+
+		params.Set("offset", accumulator.metadata().NextOffset.String())
+		for ; params.Get("offset") != "" ; {
+			nextResult, err := fetcher(params)
+			if err != nil {
+				return nil, err
+			}
+			nextResult.appendResponse(accumulator.getResponse())
+			accumulator = nextResult
+			params.Set("offset", accumulator.metadata().NextOffset.String())
+		}
+		return accumulator, nil
+	}
+
+	return fetcher(params)
+}
+
+func (c *Client) retrieveUsers(params url.Values) (*GetUsersResult, error) {
 	_, body, err := c.SignedCall(http.MethodGet, "/admin/v1/users", params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
@@ -161,10 +237,27 @@ func (c *Client) GetUser(userID string) (*GetUsersResult, error) {
 
 // GetUserGroups calls GET /admin/v1/users/:user_id/groups
 // See https://duo.com/docs/adminapi#retrieve-groups-by-user-id
-func (c *Client) GetUserGroups(userID string) (*GetGroupsResult, error) {
+func (c *Client) GetUserGroups(userID string, options ...func(*url.Values)) (*GetGroupsResult, error) {
+	params := url.Values{}
+	for _, o := range options {
+		o(&params)
+	}
+
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrieveUserGroups(userID, params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetGroupsResult), nil
+}
+
+func (c *Client) retrieveUserGroups(userID string, params url.Values) (*GetGroupsResult, error) {
 	path := fmt.Sprintf("/admin/v1/users/%s/groups", userID)
 
-	_, body, err := c.SignedCall(http.MethodGet, path, nil, duoapi.UseTimeout)
+	_, body, err := c.SignedCall(http.MethodGet, path, params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -179,10 +272,27 @@ func (c *Client) GetUserGroups(userID string) (*GetGroupsResult, error) {
 
 // GetUserPhones calls GET /admin/v1/users/:user_id/phones
 // See https://duo.com/docs/adminapi#retrieve-phones-by-user-id
-func (c *Client) GetUserPhones(userID string) (*GetPhonesResult, error) {
+func (c *Client) GetUserPhones(userID string, options ...func(*url.Values)) (*GetPhonesResult, error) {
+	params := url.Values{}
+	for _, o := range options {
+		o(&params)
+	}
+
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrieveUserPhones(userID, params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetPhonesResult), nil
+}
+
+func (c *Client) retrieveUserPhones(userID string, params url.Values) (*GetPhonesResult, error) {
 	path := fmt.Sprintf("/admin/v1/users/%s/phones", userID)
 
-	_, body, err := c.SignedCall(http.MethodGet, path, nil, duoapi.UseTimeout)
+	_, body, err := c.SignedCall(http.MethodGet, path, params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -197,10 +307,27 @@ func (c *Client) GetUserPhones(userID string) (*GetPhonesResult, error) {
 
 // GetUserTokens calls GET /admin/v1/users/:user_id/tokens
 // See https://duo.com/docs/adminapi#retrieve-hardware-tokens-by-user-id
-func (c *Client) GetUserTokens(userID string) (*GetTokensResult, error) {
+func (c *Client) GetUserTokens(userID string, options ...func(*url.Values)) (*GetTokensResult, error) {
+	params := url.Values{}
+	for _, o := range options {
+		o(&params)
+	}
+
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrieveUserTokens(userID, params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetTokensResult), nil
+}
+
+func (c *Client) retrieveUserTokens(userID string, params url.Values) (*GetTokensResult, error) {
 	path := fmt.Sprintf("/admin/v1/users/%s/tokens", userID)
 
-	_, body, err := c.SignedCall(http.MethodGet, path, nil, duoapi.UseTimeout)
+	_, body, err := c.SignedCall(http.MethodGet, path, params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -242,10 +369,27 @@ func (c *Client) AssociateUserToken(userID, tokenID string) (*StringResult, erro
 
 // GetUserU2FTokens calls GET /admin/v1/users/:user_id/u2ftokens
 // See https://duo.com/docs/adminapi#retrieve-u2f-tokens-by-user-id
-func (c *Client) GetUserU2FTokens(userID string) (*GetU2FTokensResult, error) {
+func (c *Client) GetUserU2FTokens(userID string, options ...func(*url.Values)) (*GetU2FTokensResult, error) {
+	params := url.Values{}
+	for _, o := range options {
+		o(&params)
+	}
+
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrieveUserU2FTokens(userID, params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetU2FTokensResult), nil
+}
+
+func (c *Client) retrieveUserU2FTokens(userID string, params url.Values) (*GetU2FTokensResult, error) {
 	path := fmt.Sprintf("/admin/v1/users/%s/u2ftokens", userID)
 
-	_, body, err := c.SignedCall(http.MethodGet, path, nil, duoapi.UseTimeout)
+	_, body, err := c.SignedCall(http.MethodGet, path, params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -263,13 +407,40 @@ func (c *Client) GetUserU2FTokens(userID string) (*GetU2FTokensResult, error) {
 // GetGroupsResult models responses containing a list of groups.
 type GetGroupsResult struct {
 	duoapi.StatResult
+	ListResult
 	Response []Group
+}
+
+func (result *GetGroupsResult) getResponse() interface{} {
+	return result.Response
+}
+
+func (result *GetGroupsResult) appendResponse(groups interface{}) {
+	asserted_groups := groups.([]Group)
+	result.Response = append(result.Response, asserted_groups...)
 }
 
 // GetGroups calls GET /admin/v1/groups
 // See https://duo.com/docs/adminapi#retrieve-groups
-func (c *Client) GetGroups() (*GetGroupsResult, error) {
-	_, body, err := c.SignedCall(http.MethodGet, "/admin/v1/groups", nil, duoapi.UseTimeout)
+func (c *Client) GetGroups(options ...func(*url.Values)) (*GetGroupsResult, error) {
+	params := url.Values{}
+	for _, o := range options {
+		o(&params)
+	}
+
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrieveGroups(params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetGroupsResult), nil
+}
+
+func (c *Client) retrieveGroups(params url.Values) (*GetGroupsResult, error) {
+	_, body, err := c.SignedCall(http.MethodGet, "/admin/v1/groups", params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -325,8 +496,19 @@ func GetPhonesExtension(ext string) func(*url.Values) {
 // GetPhonesResult models responses containing a list of phones.
 type GetPhonesResult struct {
 	duoapi.StatResult
+	ListResult
 	Response []Phone
 }
+
+func (result *GetPhonesResult) getResponse() interface{} {
+	return result.Response
+}
+
+func (result *GetPhonesResult) appendResponse(phones interface{}) {
+	asserted_phones := phones.([]Phone)
+	result.Response = append(result.Response, asserted_phones...)
+}
+
 
 // GetPhones calls GET /admin/v1/phones
 // See https://duo.com/docs/adminapi#phones
@@ -336,6 +518,18 @@ func (c *Client) GetPhones(options ...func(*url.Values)) (*GetPhonesResult, erro
 		o(&params)
 	}
 
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrievePhones(params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetPhonesResult), nil
+}
+
+func (c *Client) retrievePhones(params url.Values) (*GetPhonesResult, error) {
 	_, body, err := c.SignedCall(http.MethodGet, "/admin/v1/phones", params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
@@ -386,8 +580,19 @@ func GetTokensTypeAndSerial(typ, serial string) func(*url.Values) {
 // GetTokensResult models responses containing a list of tokens.
 type GetTokensResult struct {
 	duoapi.StatResult
+	ListResult
 	Response []Token
 }
+
+func (result *GetTokensResult) getResponse() interface{} {
+	return result.Response
+}
+
+func (result *GetTokensResult) appendResponse(tokens interface{}) {
+	asserted_tokens := tokens.([]Token)
+	result.Response = append(result.Response, asserted_tokens...)
+}
+
 
 // GetTokens calls GET /admin/v1/tokens
 // See https://duo.com/docs/adminapi#retrieve-hardware-tokens
@@ -397,6 +602,18 @@ func (c *Client) GetTokens(options ...func(*url.Values)) (*GetTokensResult, erro
 		o(&params)
 	}
 
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrieveTokens(params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetTokensResult), nil
+}
+
+func (c *Client) retrieveTokens(params url.Values) (*GetTokensResult, error) {
 	_, body, err := c.SignedCall(http.MethodGet, "/admin/v1/tokens", params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
@@ -439,8 +656,19 @@ func (c *Client) GetToken(tokenID string) (*GetTokenResult, error) {
 // GetU2FTokensResult models responses containing a list of U2F tokens.
 type GetU2FTokensResult struct {
 	duoapi.StatResult
+	ListResult
 	Response []U2FToken
 }
+
+func (result *GetU2FTokensResult) getResponse() interface{} {
+	return result.Response
+}
+
+func (result *GetU2FTokensResult) appendResponse(tokens interface{}) {
+	asserted_tokens := tokens.([]U2FToken)
+	result.Response = append(result.Response, asserted_tokens...)
+}
+
 
 // GetU2FTokens calls GET /admin/v1/u2ftokens
 // See https://duo.com/docs/adminapi#retrieve-u2f-tokens
@@ -450,6 +678,18 @@ func (c *Client) GetU2FTokens(options ...func(*url.Values)) (*GetU2FTokensResult
 		o(&params)
 	}
 
+	cb := func(params url.Values) (responsePage, error) {
+		return c.retrieveU2FTokens(params)
+	}
+	response, err := c.retrieveItems(params, cb)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.(*GetU2FTokensResult), nil
+}
+
+func (c *Client) retrieveU2FTokens(params url.Values) (*GetU2FTokensResult, error) {
 	_, body, err := c.SignedCall(http.MethodGet, "/admin/v1/u2ftokens", params, duoapi.UseTimeout)
 	if err != nil {
 		return nil, err
