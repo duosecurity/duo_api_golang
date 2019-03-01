@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/duosecurity/duo_api_golang"
+	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
 func buildAuthApi(url string, proxy func(*http.Request) (*url.URL, error)) *AuthApi {
@@ -137,11 +137,19 @@ func TestProxy(t *testing.T) {
 						return
 					}
 					// Tell the client that everything is going to be OK.
-					reqconn.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+					_, err = reqconn.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+					if err != nil {
+						t.Errorf("Failed to write status response with error, %v", err)
+						return
+					}
 					// Copy all the things.
 					f := func(src, dst net.Conn) {
 						defer src.Close()
-						io.Copy(src, dst)
+						_, err := io.Copy(src, dst)
+						if err != nil {
+							t.Errorf("Failed to copy between src and dest with error, %v", err)
+							return
+						}
 					}
 					go f(conn, reqconn)
 					go f(reqconn, conn)
@@ -166,8 +174,9 @@ func TestProxy(t *testing.T) {
 	defer ts.Close()
 
 	// Connect through the test proxy.
-	proxy_url, err := url.Parse(ps.URL)
-	duo := buildAuthApi(ts.URL, http.ProxyURL(proxy_url))
+	proxyURL, _ := url.Parse(ps.URL)
+
+	duo := buildAuthApi(ts.URL, http.ProxyURL(proxyURL))
 
 	result, err := duo.Check()
 	if err != nil {
@@ -187,11 +196,15 @@ func TestLogo(t *testing.T) {
 		http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "image/png")
-				w.Write([]byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00" +
+				_, err := w.Write([]byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00" +
 					"\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00" +
 					"\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx" +
 					"\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00" +
 					"\x00\x00\x00IEND\xaeB`\x82"))
+				if err != nil {
+					t.Errorf("Failed to write response with error, %v", err)
+					return
+				}
 			}))
 	defer ts.Close()
 

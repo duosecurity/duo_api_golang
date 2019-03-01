@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/duosecurity/duo_api_golang"
+	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
 type AuthApi struct {
@@ -336,7 +336,7 @@ func (api *AuthApi) Auth(factor string, options ...func(*url.Values)) (*AuthResu
 	params.Set("factor", factor)
 
 	var apiOps []duoapi.DuoApiOption
-	if _, ok := params["async"]; ok == true {
+	if _, ok := params["async"]; ok {
 		apiOps = append(apiOps, duoapi.UseTimeout)
 	}
 

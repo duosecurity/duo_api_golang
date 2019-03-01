@@ -52,7 +52,7 @@ func sign(ikey string,
 	params url.Values) string {
 	canon := canonicalize(method, host, uri, params, date)
 	mac := hmac.New(sha1.New, []byte(skey))
-	mac.Write([]byte(canon))
+	_, _ = mac.Write([]byte(canon))
 	sig := hex.EncodeToString(mac.Sum(nil))
 	auth := ikey + ":" + sig
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
@@ -77,7 +77,6 @@ type apiOptions struct {
 func SetTimeout(timeout time.Duration) func(*apiOptions) {
 	return func(opts *apiOptions) {
 		opts.timeout = timeout
-		return
 	}
 }
 

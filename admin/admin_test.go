@@ -2,7 +2,6 @@ package admin
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -10,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/duosecurity/duo_api_golang"
+	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
 func buildAdminClient(url string, proxy func(*http.Request) (*url.URL, error)) *Client {
@@ -20,16 +19,6 @@ func buildAdminClient(url string, proxy func(*http.Request) (*url.URL, error)) *
 	userAgent := "GoTestClient"
 	base := duoapi.NewDuoApi(ikey, skey, host, userAgent, duoapi.SetTimeout(1*time.Second), duoapi.SetInsecure(), duoapi.SetProxy(proxy))
 	return New(*base)
-}
-
-func getBodyParams(r *http.Request) (url.Values, error) {
-	body, err := ioutil.ReadAll(r.Body)
-	r.Body.Close()
-	if err != nil {
-		return url.Values{}, err
-	}
-	reqParams, err := url.ParseQuery(string(body))
-	return reqParams, err
 }
 
 const getUsersResponse = `{
@@ -331,7 +320,6 @@ func TestGetUserPageArgs(t *testing.T) {
 	_, err := duo.GetUsers(func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
@@ -542,7 +530,6 @@ func TestGetUserGroupsPageArgs(t *testing.T) {
 	_, err := duo.GetUserGroups("DU3RP9I2WOC59VZX672N", func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
@@ -767,7 +754,6 @@ func TestGetUserPhonesPageArgs(t *testing.T) {
 	_, err := duo.GetUserPhones("DU3RP9I2WOC59VZX672N", func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
@@ -929,7 +915,6 @@ func TestGetUserTokensPageArgs(t *testing.T) {
 	_, err := duo.GetUserTokens("DU3RP9I2WOC59VZX672N", func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
@@ -1097,7 +1082,6 @@ func TestGetUserU2FTokensPageArgs(t *testing.T) {
 	_, err := duo.GetUserU2FTokens("DU3RP9I2WOC59VZX672N", func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
@@ -1199,7 +1183,6 @@ func TestGetGroupsPageArgs(t *testing.T) {
 	_, err := duo.GetGroups(func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
@@ -1478,7 +1461,6 @@ func TestGetPhonesPageArgs(t *testing.T) {
 	_, err := duo.GetPhones(func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
@@ -1712,7 +1694,6 @@ func TestGetTokensPageArgs(t *testing.T) {
 	_, err := duo.GetTokens(func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
@@ -1947,7 +1928,6 @@ func TestGetU2FTokensPageArgs(t *testing.T) {
 	_, err := duo.GetU2FTokens(func(values *url.Values) {
 		values.Set("limit", "200")
 		values.Set("offset", "1")
-		return
 	})
 
 	if err != nil {
