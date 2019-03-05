@@ -1,9 +1,13 @@
 package duoapi
 
 import (
+	"bytes"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestCanonicalize(t *testing.T) {
@@ -153,4 +157,109 @@ func TestNewDuo(t *testing.T) {
 	if duo == nil {
 		t.Fatal("Failed to create a new Duo Api")
 	}
+}
+
+func assertRateLimitedCall(t *testing.T, httpResponses []http.Response, finalResponse http.Response, expectedSleepDurations []time.Duration) {
+	httpClient := &mockHttpClient{responses: httpResponses}
+	sleepSvc := &mockSleepService{}
+
+	duo := &DuoApi{
+		ikey: 		"ikey-foo",
+		skey: 		"skey-bar",
+		host:       "host.baz",
+		userAgent:  "ua-qux",
+		apiClient:  httpClient,
+		authClient: httpClient,
+		sleepSvc: 	sleepSvc,
+	}
+
+	resp, _, _ := duo.Call("GET", "/v9/hello/world", url.Values{})
+	if resp.StatusCode != finalResponse.StatusCode {
+		t.Fatal("returned response does not have correct status code")
+	}
+	if resp.Body != finalResponse.Body {
+		t.Fatal("returned response does not have correct body")
+	}
+
+	expectedTotalCalls := len(httpResponses)
+	retriedRequestCount := expectedTotalCalls - 1
+
+	if len(httpClient.actualRequests) != expectedTotalCalls {
+		t.Fatal("Made " + string(len(httpClient.actualRequests)) +
+			" requests instead of " + string(expectedTotalCalls))
+	}
+
+	if len(sleepSvc.sleepCalls) != retriedRequestCount {
+		t.Fatal("Made " + string(len(sleepSvc.sleepCalls)) +
+			" sleep calls instead of " + string(retriedRequestCount))
+	}
+	for i := range expectedSleepDurations {
+		if sleepSvc.sleepCalls[i] != expectedSleepDurations[i] {
+			t.Fatal("Slept for " + string(sleepSvc.sleepCalls[i]) +
+				" instead of " + string(expectedSleepDurations[i]))
+		}
+	}
+}
+
+func TestRateLimitedOnce(t *testing.T) {
+	okResp := http.Response{
+		StatusCode: 200,
+		Body: ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
+	}
+	rateLimitResp := http.Response{
+		StatusCode: 429,
+		Body: ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
+	}
+	responses := []http.Response{rateLimitResp, okResp}
+	sleepDurations := []time.Duration{time.Millisecond * 1000}
+
+	assertRateLimitedCall(t, responses, okResp, sleepDurations)
+}
+
+func TestCompletelyRateLimited(t *testing.T) {
+	rateLimitResp := http.Response{
+		StatusCode: 429,
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
+	}
+	responses := make([]http.Response, 7)
+	for i := range responses {
+		responses[i] = rateLimitResp
+	}
+
+	sleepDurations := []time.Duration{
+		time.Millisecond * 1000,
+		time.Millisecond * 2000,
+		time.Millisecond * 4000,
+		time.Millisecond * 8000,
+		time.Millisecond * 16000,
+		time.Millisecond * 32000,
+	}
+	assertRateLimitedCall(t, responses, rateLimitResp, sleepDurations)
+}
+
+type mockHttpClient struct {
+	responses []http.Response
+	actualRequests []*http.Request
+}
+
+func (c *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
+	if c.actualRequests == nil {
+		c.actualRequests = []*http.Request{}
+	}
+	c.actualRequests = append(c.actualRequests, req)
+
+	resp := c.responses[0]
+	c.responses = c.responses[1:]
+	return &resp, nil
+}
+
+type mockSleepService struct {
+	sleepCalls []time.Duration
+}
+
+func (svc *mockSleepService) Sleep(duration time.Duration) {
+	if svc.sleepCalls == nil {
+		svc.sleepCalls = []time.Duration{}
+	}
+	svc.sleepCalls = append(svc.sleepCalls, duration)
 }

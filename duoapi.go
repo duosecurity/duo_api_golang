@@ -8,11 +8,19 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+)
+
+const (
+	initialBackoffMS = 1000
+	maxBackoffMS = 32000
+	backoffFactor = 2
+	rateLimitHttpCode = 429
 )
 
 var spaceReplacer *strings.Replacer = strings.NewReplacer("+", "%20")
@@ -63,8 +71,20 @@ type DuoApi struct {
 	skey       string
 	host       string
 	userAgent  string
-	apiClient  *http.Client
-	authClient *http.Client
+	apiClient  HttpClient
+	authClient HttpClient
+	sleepSvc   SleepService
+}
+
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+type SleepService interface {
+	Sleep(duration time.Duration)
+}
+type timeSleepService struct {}
+func (svc timeSleepService) Sleep(duration time.Duration) {
+	time.Sleep(duration + (time.Duration(rand.Intn(1000)) * time.Millisecond))
 }
 
 type apiOptions struct {
@@ -139,6 +159,7 @@ func NewDuoApi(ikey string,
 		authClient: &http.Client{
 			Transport: tr,
 		},
+		sleepSvc: timeSleepService{},
 	}
 }
 
@@ -197,17 +218,27 @@ func (duoapi *DuoApi) Call(method string,
 		Path:     uri,
 		RawQuery: params.Encode(),
 	}
-	request, err := http.NewRequest(method, url.String(), nil)
-	if err != nil {
-		return nil, nil, err
+
+	backoffMs := initialBackoffMS
+	for {
+		request, err := http.NewRequest(method, url.String(), nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		resp, err := client.Do(request)
+
+		if backoffMs > maxBackoffMS || resp.StatusCode != rateLimitHttpCode {
+			var body []byte
+			if err == nil {
+				body, err = ioutil.ReadAll(resp.Body)
+				resp.Body.Close()
+			}
+			return resp, body, err
+		}
+
+		duoapi.sleepSvc.Sleep(time.Millisecond * time.Duration(backoffMs))
+		backoffMs *= backoffFactor
 	}
-	resp, err := client.Do(request)
-	var body []byte
-	if err == nil {
-		body, err = ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-	}
-	return resp, body, err
 }
 
 // Make a signed Duo Rest API call.  See Duo's online documentation
