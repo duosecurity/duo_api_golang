@@ -226,14 +226,16 @@ func (duoapi *DuoApi) Call(method string,
 		if err != nil {
 			return nil, nil, err
 		}
+
 		resp, err := client.Do(request)
+		var body []byte
+		if err != nil {
+			return resp, body, err
+		}
 
 		if backoffMs > maxBackoffMS || resp.StatusCode != rateLimitHttpCode {
-			var body []byte
-			if err == nil {
-				body, err = ioutil.ReadAll(resp.Body)
-				resp.Body.Close()
-			}
+			body, err = ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			return resp, body, err
 		}
 

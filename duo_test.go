@@ -2,6 +2,7 @@ package duoapi
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -159,6 +160,34 @@ func TestNewDuo(t *testing.T) {
 	}
 }
 
+func TestDupApiCallHttpErr(t *testing.T) {
+	httpClient := &mockHttpClient{doError: true}
+	sleepSvc := &mockSleepService{}
+
+	duo := &DuoApi{
+		ikey:       "ikey-foo",
+		skey:       "skey-bar",
+		host:       "host.baz",
+		userAgent:  "ua-qux",
+		apiClient:  httpClient,
+		authClient: httpClient,
+		sleepSvc:   sleepSvc,
+	}
+	resp, body, err := duo.Call("GET", "/v9/hello/world", url.Values{})
+	if resp != nil {
+		t.Fatal("Non nil response returned")
+	}
+	if len(body) != 0 {
+		t.Fatal("Non empty body returned")
+	}
+	if err == nil {
+		t.Fatal("No error returned")
+	}
+	if len(httpClient.actualRequests) != 1 {
+		t.Fatal("We should not retry after an HTTP error")
+	}
+}
+
 func assertRateLimitedCall(t *testing.T, httpResponses []http.Response, finalResponse http.Response, expectedSleepDurations []time.Duration) {
 	httpClient := &mockHttpClient{responses: httpResponses}
 	sleepSvc := &mockSleepService{}
@@ -240,6 +269,7 @@ func TestCompletelyRateLimited(t *testing.T) {
 type mockHttpClient struct {
 	responses      []http.Response
 	actualRequests []*http.Request
+	doError        bool
 }
 
 func (c *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
@@ -247,6 +277,9 @@ func (c *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
 		c.actualRequests = []*http.Request{}
 	}
 	c.actualRequests = append(c.actualRequests, req)
+	if c.doError {
+		return nil, errors.New("Ouch")
+	}
 
 	resp := c.responses[0]
 	c.responses = c.responses[1:]
