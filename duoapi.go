@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	initialBackoffMS = 1000
-	maxBackoffMS = 32000
-	backoffFactor = 2
+	initialBackoffMS  = 1000
+	maxBackoffMS      = 32000
+	backoffFactor     = 2
 	rateLimitHttpCode = 429
 )
 
@@ -82,7 +82,8 @@ type HttpClient interface {
 type SleepService interface {
 	Sleep(duration time.Duration)
 }
-type timeSleepService struct {}
+type timeSleepService struct{}
+
 func (svc timeSleepService) Sleep(duration time.Duration) {
 	time.Sleep(duration + (time.Duration(rand.Intn(1000)) * time.Millisecond))
 }
