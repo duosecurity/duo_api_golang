@@ -72,15 +72,15 @@ type DuoApi struct {
 	skey       string
 	host       string
 	userAgent  string
-	apiClient  HttpClient
-	authClient HttpClient
-	sleepSvc   SleepService
+	apiClient  httpClient
+	authClient httpClient
+	sleepSvc   sleepService
 }
 
-type HttpClient interface {
+type httpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
-type SleepService interface {
+type sleepService interface {
 	Sleep(duration time.Duration)
 }
 type timeSleepService struct{}
