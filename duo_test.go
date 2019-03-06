@@ -188,11 +188,11 @@ func TestDupApiCallHttpErr(t *testing.T) {
 	}
 }
 
-func assertRateLimitedCall(t *testing.T, httpResponses []http.Response, finalResponse http.Response, expectedSleepDurations []time.Duration) {
+func getMockClients(httpResponses []http.Response) (*DuoApi, *mockHttpClient, *mockSleepService) {
 	httpClient := &mockHttpClient{responses: httpResponses}
 	sleepSvc := &mockSleepService{}
 
-	duo := &DuoApi{
+	return &DuoApi{
 		ikey:       "ikey-foo",
 		skey:       "skey-bar",
 		host:       "host.baz",
@@ -200,17 +200,43 @@ func assertRateLimitedCall(t *testing.T, httpResponses []http.Response, finalRes
 		apiClient:  httpClient,
 		authClient: httpClient,
 		sleepSvc:   sleepSvc,
-	}
+	}, httpClient, sleepSvc
+}
 
-	resp, _, _ := duo.Call("GET", "/v9/hello/world", url.Values{})
-	if resp.StatusCode != finalResponse.StatusCode {
+var okResp = http.Response{
+	StatusCode: 200,
+	Body:       ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
+}
+var rateLimitResp = http.Response{
+	StatusCode: 429,
+	Body:       ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
+}
+
+var completeRateLimitSleepDurations = []time.Duration{
+	time.Millisecond * 1000,
+	time.Millisecond * 2000,
+	time.Millisecond * 4000,
+	time.Millisecond * 8000,
+	time.Millisecond * 16000,
+	time.Millisecond * 32000,
+}
+
+func assertRateLimitedCall(
+	t *testing.T,
+	actualResponse http.Response,
+	httpClient mockHttpClient,
+	sleepSvc mockSleepService,
+	expectedTotalCalls int,
+	expectedResponse http.Response,
+	expectedSleepDurations []time.Duration) {
+
+	if actualResponse.StatusCode != expectedResponse.StatusCode {
 		t.Fatal("returned response does not have correct status code")
 	}
-	if resp.Body != finalResponse.Body {
+	if actualResponse.Body != expectedResponse.Body {
 		t.Fatal("returned response does not have correct body")
 	}
 
-	expectedTotalCalls := len(httpResponses)
 	retriedRequestCount := expectedTotalCalls - 1
 
 	if len(httpClient.actualRequests) != expectedTotalCalls {
@@ -230,40 +256,46 @@ func assertRateLimitedCall(t *testing.T, httpResponses []http.Response, finalRes
 	}
 }
 
-func TestRateLimitedOnce(t *testing.T) {
-	okResp := http.Response{
-		StatusCode: 200,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
-	}
-	rateLimitResp := http.Response{
-		StatusCode: 429,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
-	}
+func TestCallRateLimitedOnce(t *testing.T) {
 	responses := []http.Response{rateLimitResp, okResp}
 	sleepDurations := []time.Duration{time.Millisecond * 1000}
 
-	assertRateLimitedCall(t, responses, okResp, sleepDurations)
+	duo, mockHttp, mockSleep := getMockClients(responses)
+	resp, _, _ := duo.Call("GET", "/v9/hello/world", url.Values{})
+	assertRateLimitedCall(t, *resp, *mockHttp, *mockSleep, 2, okResp, sleepDurations)
 }
 
-func TestCompletelyRateLimited(t *testing.T) {
-	rateLimitResp := http.Response{
-		StatusCode: 429,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
-	}
+func TestCallCompletelyRateLimited(t *testing.T) {
 	responses := make([]http.Response, 7)
 	for i := range responses {
 		responses[i] = rateLimitResp
 	}
 
-	sleepDurations := []time.Duration{
-		time.Millisecond * 1000,
-		time.Millisecond * 2000,
-		time.Millisecond * 4000,
-		time.Millisecond * 8000,
-		time.Millisecond * 16000,
-		time.Millisecond * 32000,
+	duo, mockHttp, mockSleep := getMockClients(responses)
+	resp, _, _ := duo.Call("GET", "/v9/hello/world", url.Values{})
+	assertRateLimitedCall(t, *resp, *mockHttp, *mockSleep,
+		7, rateLimitResp, completeRateLimitSleepDurations)
+}
+
+func TestSignedCallRateLimitedOnce(t *testing.T) {
+	responses := []http.Response{rateLimitResp, okResp}
+	sleepDurations := []time.Duration{time.Millisecond * 1000}
+
+	duo, mockHttp, mockSleep := getMockClients(responses)
+	resp, _, _ := duo.SignedCall("GET", "/v9/hello/world", url.Values{})
+	assertRateLimitedCall(t, *resp, *mockHttp, *mockSleep, 2, okResp, sleepDurations)
+}
+
+func TestSignedCallCompletelyRateLimited(t *testing.T) {
+	responses := make([]http.Response, 7)
+	for i := range responses {
+		responses[i] = rateLimitResp
 	}
-	assertRateLimitedCall(t, responses, rateLimitResp, sleepDurations)
+
+	duo, mockHttp, mockSleep := getMockClients(responses)
+	resp, _, _ := duo.SignedCall("GET", "/v9/hello/world", url.Values{})
+	assertRateLimitedCall(t, *resp, *mockHttp, *mockSleep,
+		7, rateLimitResp, completeRateLimitSleepDurations)
 }
 
 type mockHttpClient struct {

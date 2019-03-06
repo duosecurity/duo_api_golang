@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -206,12 +207,6 @@ func (duoapi *DuoApi) Call(method string,
 	uri string,
 	params url.Values,
 	options ...DuoApiOption) (*http.Response, []byte, error) {
-	opts := duoapi.buildOptions(options...)
-
-	client := duoapi.authClient
-	if opts.timeout {
-		client = duoapi.apiClient
-	}
 
 	url := url.URL{
 		Scheme:   "https",
@@ -220,11 +215,77 @@ func (duoapi *DuoApi) Call(method string,
 		RawQuery: params.Encode(),
 	}
 
+	return duoapi.makeRetryableHttpCall(method, url, nil, nil, options...)
+}
+
+// Make a signed Duo Rest API call.  See Duo's online documentation
+// for the available REST API's.
+// method is POST or GET
+// uri is the URI of the Duo Rest call
+// params HTTP query parameters to include in the call.
+// options Optional parameters.  Use UseTimeout to toggle whether the
+//         Duo Rest API call should timeout or not.
+//
+// Example: duo.SignedCall("GET", "/auth/v2/check", nil, duoapi.UseTimeout)
+func (duoapi *DuoApi) SignedCall(method string,
+	uri string,
+	params url.Values,
+	options ...DuoApiOption) (*http.Response, []byte, error) {
+
+	now := time.Now().UTC().Format(time.RFC1123Z)
+	auth_sig := sign(duoapi.ikey, duoapi.skey, method, duoapi.host, uri, now, params)
+
+	url := url.URL{
+		Scheme: "https",
+		Host:   duoapi.host,
+		Path:   uri,
+	}
+	method = strings.ToUpper(method)
+
+	if method == "GET" {
+		url.RawQuery = params.Encode()
+	}
+
+	headers := make(map[string]string)
+	headers["Authorization"] = auth_sig
+	headers["Date"] = now
+	var requestBody io.ReadCloser = nil
+	if method == "POST" || method == "PUT" {
+		headers["Content-Type"] = "application/x-www-form-urlencoded"
+		requestBody = ioutil.NopCloser(strings.NewReader(params.Encode()))
+	}
+
+	return duoapi.makeRetryableHttpCall(method, url, headers, requestBody, options...)
+}
+
+func (duoapi *DuoApi) makeRetryableHttpCall(
+	method string,
+	url url.URL,
+	headers map[string]string,
+	body io.ReadCloser,
+	options ...DuoApiOption) (*http.Response, []byte, error) {
+
+	opts := duoapi.buildOptions(options...)
+
+	client := duoapi.authClient
+	if opts.timeout {
+		client = duoapi.apiClient
+	}
+
 	backoffMs := initialBackoffMS
 	for {
 		request, err := http.NewRequest(method, url.String(), nil)
 		if err != nil {
 			return nil, nil, err
+		}
+
+		if headers != nil {
+			for k, v := range headers {
+				request.Header.Set(k, v)
+			}
+		}
+		if body != nil {
+			request.Body = body
 		}
 
 		resp, err := client.Do(request)
@@ -242,60 +303,6 @@ func (duoapi *DuoApi) Call(method string,
 		duoapi.sleepSvc.Sleep(time.Millisecond * time.Duration(backoffMs))
 		backoffMs *= backoffFactor
 	}
-}
-
-// Make a signed Duo Rest API call.  See Duo's online documentation
-// for the available REST API's.
-// method is POST or GET
-// uri is the URI of the Duo Rest call
-// params HTTP query parameters to include in the call.
-// options Optional parameters.  Use UseTimeout to toggle whether the
-//         Duo Rest API call should timeout or not.
-//
-// Example: duo.SignedCall("GET", "/auth/v2/check", nil, duoapi.UseTimeout)
-func (duoapi *DuoApi) SignedCall(method string,
-	uri string,
-	params url.Values,
-	options ...DuoApiOption) (*http.Response, []byte, error) {
-	opts := duoapi.buildOptions(options...)
-
-	now := time.Now().UTC().Format(time.RFC1123Z)
-	auth_sig := sign(duoapi.ikey, duoapi.skey, method, duoapi.host, uri, now, params)
-
-	url := url.URL{
-		Scheme: "https",
-		Host:   duoapi.host,
-		Path:   uri,
-	}
-	method = strings.ToUpper(method)
-
-	if method == "GET" {
-		url.RawQuery = params.Encode()
-	}
-
-	request, err := http.NewRequest(method, url.String(), nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	request.Header.Set("Authorization", auth_sig)
-	request.Header.Set("Date", now)
-
-	if method == "POST" || method == "PUT" {
-		request.Body = ioutil.NopCloser(strings.NewReader(params.Encode()))
-		request.Header.Set("Content-type", "application/x-www-form-urlencoded")
-	}
-
-	client := duoapi.authClient
-	if opts.timeout {
-		client = duoapi.apiClient
-	}
-	resp, err := client.Do(request)
-	var body []byte
-	if err == nil {
-		body, err = ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-	}
-	return resp, body, err
 }
 
 const duoPinnedCert string = `
