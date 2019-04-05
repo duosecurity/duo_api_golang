@@ -1991,3 +1991,42 @@ func TestGetU2FToken(t *testing.T) {
 		t.Errorf("Expected registration ID D21RU6X1B1DF5P54B6PV, but got %s", result.Response[0].RegistrationID)
 	}
 }
+
+const getBypassCodesResponse = `{
+	"stat": "OK",
+	"response": [
+		"407176182",
+		"016931781",
+		"338390347",
+		"537828175",
+		"006165274",
+		"438680449",
+		"877647224",
+		"196167433",
+		"719424708",
+		"727559878"
+	]
+}`
+
+func TestGetBypassCodes(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, getBypassCodesResponse)
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	result, err := duo.GetUserBypassCodes("D21RU6X1B1DF5P54B6PV")
+
+	if err != nil {
+		t.Errorf("Unexpected error from GetUserBypassCodes call %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
+	}
+	if len(result.Response) != 10 {
+		t.Errorf("Expected 10 codes, but got %d", len(result.Response))
+	}
+}
