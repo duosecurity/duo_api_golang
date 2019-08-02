@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	duoapi "github.com/duosecurity/duo_api_golang"
+	"github.com/google/go-querystring/query"
 )
 
 // Client provides access to Duo's admin API.
@@ -36,24 +37,24 @@ func New(base duoapi.DuoApi) *Client {
 
 // User models a single user.
 type User struct {
-	Alias1            *string
-	Alias2            *string
-	Alias3            *string
-	Alias4            *string
-	Created           uint64
-	Email             string
-	FirstName         *string
+	Alias1            *string `url:"alias1"`
+	Alias2            *string `url:"alias2"`
+	Alias3            *string `url:"alias3"`
+	Alias4            *string `url:"alias4"`
+	Created           uint64  `url:"created"`
+	Email             string  `url:"email"`
+	FirstName         *string `url:"firstname"`
 	Groups            []Group
 	LastDirectorySync *uint64 `json:"last_directory_sync"`
 	LastLogin         *uint64 `json:"last_login"`
-	LastName          *string
-	Notes             string
+	LastName          *string `url:"lastname"`
+	Notes             string  `url:"notes"`
 	Phones            []Phone
-	RealName          *string
-	Status            string
+	RealName          *string `url:"realname"`
+	Status            string  `url:"status"`
 	Tokens            []Token
 	UserID            string `json:"user_id"`
-	Username          string
+	Username          string `url:"username"`
 }
 
 // Group models a group to which users may belong.
@@ -243,6 +244,70 @@ func (c *Client) GetUser(userID string) (*GetUserResult, error) {
 	return result, nil
 }
 
+// CreateUser calls POST /admin/v1/users
+// See https://duo.com/docs/adminapi#create-user
+func (c *Client) CreateUser(userToCreate User) (*GetUserResult, error) {
+	path := "/admin/v1/users"
+
+	params, err := query.Values(userToCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	_, body, err := c.SignedCall(http.MethodPost, path, params, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &GetUserResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// ModifyUser calls POST /admin/v1/users/:user_id
+// See https://duo.com/docs/adminapi#modify-user
+func (c *Client) ModifyUser(userID string, userToModify User) (*GetUserResult, error) {
+	path := fmt.Sprintf("/admin/v1/users/%s", userID)
+
+	params, err := query.Values(userToModify)
+	if err != nil {
+		return nil, err
+	}
+
+	_, body, err := c.SignedCall(http.MethodPost, path, params, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &GetUserResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// DeleteUser calls DELETE /admin/v1/users/:user_id
+// See https://duo.com/docs/adminapi#delete-user
+func (c *Client) DeleteUser(userID string) (*duoapi.StatResult, error) {
+	path := fmt.Sprintf("/admin/v1/users/%s", userID)
+
+	_, body, err := c.SignedCall(http.MethodDelete, path, nil, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &duoapi.StatResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // GetUserGroups calls GET /admin/v1/users/:user_id/groups
 // See https://duo.com/docs/adminapi#retrieve-groups-by-user-id
 func (c *Client) GetUserGroups(userID string, options ...func(*url.Values)) (*GetGroupsResult, error) {
@@ -260,6 +325,45 @@ func (c *Client) GetUserGroups(userID string, options ...func(*url.Values)) (*Ge
 	}
 
 	return response.(*GetGroupsResult), nil
+}
+
+// AssociateGroupWithUser calls POST /admin/v1/users/:user_id/groups
+// See https://duo.com/docs/adminapi#associate-group-with-user
+func (c *Client) AssociateGroupWithUser(userID string, groupID string) (*duoapi.StatResult, error) {
+	path := fmt.Sprintf("/admin/v1/users/%s/groups", userID)
+
+	params := url.Values{}
+	params.Set("group_id", groupID)
+
+	_, body, err := c.SignedCall(http.MethodPost, path, params, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &duoapi.StatResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// DisassociateGroupFromUser calls POST /admin/v1/users/:user_id/groups
+// See https://duo.com/docs/adminapi#disassociate-group-from-user
+func (c *Client) DisassociateGroupFromUser(userID string, groupID string) (*duoapi.StatResult, error) {
+	path := fmt.Sprintf("/admin/v1/users/%s/groups/%s", userID, groupID)
+
+	_, body, err := c.SignedCall(http.MethodDelete, path, nil, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &duoapi.StatResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (c *Client) retrieveUserGroups(userID string, params url.Values) (*GetGroupsResult, error) {
