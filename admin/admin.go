@@ -37,20 +37,20 @@ func New(base duoapi.DuoApi) *Client {
 
 // User models a single user.
 type User struct {
-	Alias1            *string `url:"alias1"`
-	Alias2            *string `url:"alias2"`
-	Alias3            *string `url:"alias3"`
-	Alias4            *string `url:"alias4"`
+	Alias1            *string `url:"alias1,omitempty"`
+	Alias2            *string `url:"alias2,omitempty"`
+	Alias3            *string `url:"alias3,omitempty"`
+	Alias4            *string `url:"alias4,omitempty"`
 	Created           uint64  `url:"created"`
 	Email             string  `url:"email"`
-	FirstName         *string `url:"firstname"`
+	FirstName         *string `url:"firstname,omitempty"`
 	Groups            []Group
 	LastDirectorySync *uint64 `json:"last_directory_sync"`
 	LastLogin         *uint64 `json:"last_login"`
-	LastName          *string `url:"lastname"`
-	Notes             string  `url:"notes"`
+	LastName          *string `url:"lastname,omitempty"`
+	Notes             string  `url:"notes,omitempty"`
 	Phones            []Phone
-	RealName          *string `url:"realname"`
+	RealName          *string `url:"realname,omitempty"`
 	Status            string  `url:"status"`
 	Tokens            []Token
 	UserID            string `json:"user_id"`
