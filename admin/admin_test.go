@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/duosecurity/duo_api_golang"
+	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
 func buildAdminClient(url string, proxy func(*http.Request) (*url.URL, error)) *Client {
@@ -1989,5 +1989,135 @@ func TestGetU2FToken(t *testing.T) {
 	}
 	if result.Response[0].RegistrationID != "D21RU6X1B1DF5P54B6PV" {
 		t.Errorf("Expected registration ID D21RU6X1B1DF5P54B6PV, but got %s", result.Response[0].RegistrationID)
+	}
+}
+
+/*
+ * Logs
+ */
+
+// TestLogListV2Metadata ensures that the next offset is properly configured based on known metadata.
+func TestLogListV2Metadata(t *testing.T) {
+	page := LogListV2Metadata{
+		NextOffset: []string{"1532951895000", "af0ba235-0b33-23c8-bc23-a31aa0231de8"},
+	}
+	nextOffset := page.GetNextOffset()
+	if nextOffset == nil {
+		t.Fatalf("Expected option to configure next offset, got nil")
+	}
+	params := url.Values{}
+	nextOffset(&params)
+	if nextParam := params.Get("next_offset"); nextParam != "1532951895000,af0ba235-0b33-23c8-bc23-a31aa0231de8" {
+		t.Fatalf("Expected option to configure next offset to be '1532951895000,af0ba235-0b33-23c8-bc23-a31aa0231de8', got %q", nextParam)
+	}
+
+	lastPage := LogListV2Metadata{}
+	if lastPage.GetNextOffset() != nil {
+		t.Errorf("Expected nil option to represent no more available logs, got a non-nil option")
+	}
+}
+
+// getAuthLogsResponse is an example response from the Duo API documentation example: https://duo.com/docs/adminapi#authentication-logs
+const getAuthLogsResponse = `{
+    "response": {
+        "authlogs": [
+            {
+                "access_device": {
+                    "browser": "Chrome",
+                    "browser_version": "67.0.3396.99",
+                    "flash_version": "uninstalled",
+                    "hostname": "null",
+                    "ip": "169.232.89.219",
+                    "java_version": "uninstalled",
+                    "location": {
+                        "city": "Ann Arbor",
+                        "country": "United States",
+                        "state": "Michigan"
+                    },
+                    "os": "Mac OS X",
+                    "os_version": "10.14.1"
+                },
+                "application": {
+                    "key": "DIY231J8BR23QK4UKBY8",
+                    "name": "Microsoft Azure Active Directory"
+                },
+                "auth_device": {
+                    "ip": "192.168.225.254",
+                    "location": {
+                        "city": "Ann Arbor",
+                        "country": "United States",
+                        "state": "Michigan"
+                    },
+                    "name": "My iPhone X (734-555-2342)"
+                },
+                "event_type": "authentication",
+                "factor": "duo_push",
+                "reason": "user_approved",
+                "result": "success",
+                "timestamp": 1532951962,
+                "trusted_endpoint_status": "not trusted",
+                "txid": "340a23e3-23f3-23c1-87dc-1491a23dfdbb",
+                "user": {
+                    "key": "DU3KC77WJ06Y5HIV7XKQ",
+                    "name": "narroway@example.com"
+                }
+            }
+        ],
+        "metadata": {
+            "next_offset": [
+                "1532951895000",
+                "af0ba235-0b33-23c8-bc23-a31aa0231de8"
+            ],
+            "total_objects": 1
+        }
+    },
+    "stat": "OK"
+}`
+
+// TestGetAuthLogs ensures proper functionality of the client.GetAuthLogs method.
+func TestGetAuthLogs(t *testing.T) {
+	var last_request *http.Request
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, getAuthLogsResponse)
+			last_request = r
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	lastMetadata := LogListV2Metadata{
+		NextOffset: []string{"1532951920000", "b40ba235-0b33-23c8-bc23-a31aa0231db4"},
+	}
+	mintime := time.Unix(1532951960, 0)
+	window := 5 * time.Second
+	result, err := duo.GetAuthLogs(mintime, window, lastMetadata.GetNextOffset())
+
+	if err != nil {
+		t.Errorf("Unexpected error from GetAuthLogs call: %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
+	}
+	if length := len(result.Response.Logs); length != 1 {
+		t.Errorf("Expected 1 log, but got %d", length)
+	}
+	if txid := result.Response.Logs[0]["txid"]; txid != "340a23e3-23f3-23c1-87dc-1491a23dfdbb" {
+		t.Errorf("Expected txid '340a23e3-23f3-23c1-87dc-1491a23dfdbb', but got %v", txid)
+	}
+	if next := result.Response.Metadata.GetNextOffset(); next == nil {
+		t.Errorf("Expected metadata.GetNextOffset option to configure pagination for next request, got nil")
+	}
+
+	request_query := last_request.URL.Query()
+	if qMintime := request_query["mintime"][0]; qMintime != "1532951960000" {
+		t.Errorf("Expected to see a mintime of 153295196000 in request, but got %q", qMintime)
+	}
+	if qMaxtime := request_query["maxtime"][0]; qMaxtime != "1532951965000" {
+		t.Errorf("Expected to see a maxtime of 153295196500 in request, but got %q", qMaxtime)
+	}
+	if qNextOffset := request_query["next_offset"][0]; qNextOffset != "1532951920000,b40ba235-0b33-23c8-bc23-a31aa0231db4" {
+		t.Errorf("Expected to see a next_offset of 1532951920000,b40ba235-0b33-23c8-bc23-a31aa0231db4 in request, but got %q", qNextOffset)
 	}
 }
