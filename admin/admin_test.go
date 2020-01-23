@@ -2228,3 +2228,89 @@ func TestAdminLogsNextOffset(t *testing.T) {
 		t.Errorf("Expected new mintime to be 1346172820, got: %v", newMintime)
 	}
 }
+
+// getTelephonyLogsResponse is an example response from the Duo API documentation example: https://duo.com/docs/adminapi#telephony-logs
+const getTelephonyLogsResponse = `{
+	"stat": "OK",
+	"response": [{
+		"context": "authentication",
+		"credits": 1,
+		"phone": "+15035550100",
+		"timestamp": 1346172697,
+		"type": "sms"
+	}]
+  }`
+
+// TestGetTelephonyLogs ensures proper functionality of the client.GetTelephonyLogs method.
+func TestGetTelephonyLogs(t *testing.T) {
+	var last_request *http.Request
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, getTelephonyLogsResponse)
+			last_request = r
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	mintime := time.Unix(1346172600, 0)
+	maxtime := mintime.Add(time.Second * 10)
+	result, err := duo.GetTelephonyLogs(mintime)
+
+	if err != nil {
+		t.Errorf("Unexpected error from GetTelephonyLogs call: %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
+	}
+	if length := len(result.Logs); length != 1 {
+		t.Errorf("Expected 1 logs, but got %d", length)
+	}
+	timestamp, err := result.Logs[0].Timestamp()
+	if err != nil {
+		t.Errorf("Failed to parse timestamp timestamp: %v", err)
+	}
+	if expectedTs := time.Unix(1346172697, 0); !expectedTs.Equal(timestamp) {
+		t.Errorf("Expected timestamp %v, but got: %v", expectedTs, timestamp)
+	}
+	if next := result.Logs.GetNextOffset(maxtime); next != nil {
+		t.Errorf("Expected no next page available, got non-nil option")
+	}
+
+	request_query := last_request.URL.Query()
+	if qMintime := request_query["mintime"][0]; qMintime != "1346172600" {
+		t.Errorf("Expected to see a mintime of 1346172600 in request, but got %q", qMintime)
+	}
+}
+
+// TestTelephonyLogsNextOffset ensures proper pagination functionality for TelephonyLogResult
+func TestTelephonyLogsNextOffset(t *testing.T) {
+	maxtime := time.Unix(1346172825, 0)
+
+	// Ensure < 1000 logs returns none
+	result := &TelephonyLogResult{}
+	if next := result.Logs.GetNextOffset(maxtime); next != nil {
+		t.Errorf("Expected no next page available, got non-nil option")
+	}
+
+	// Ensure mintime == maxtime returns maxtime + 1
+	logs := make([]TelephonyLog, 0, 1000)
+	for i := 0; i < 1000; i++ {
+		logs = append(logs, TelephonyLog{"timestamp": 1346172816})
+	}
+	result.Logs = TelephonyLogList(logs)
+	params := &url.Values{}
+	result.Logs.GetNextOffset(maxtime)(params)
+	if newMintime := params.Get("mintime"); newMintime != "1346172817" {
+		t.Errorf("Expected new mintime to be 1346172817, got: %v", newMintime)
+	}
+
+	// Ensure single maxtime returns maxtime
+	result.Logs[0] = TelephonyLog{"timestamp": 1346172820}
+	params = &url.Values{}
+	result.Logs.GetNextOffset(maxtime)(params)
+	if newMintime := params.Get("mintime"); newMintime != "1346172820" {
+		t.Errorf("Expected new mintime to be 1346172820, got: %v", newMintime)
+	}
+}

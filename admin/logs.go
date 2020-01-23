@@ -248,7 +248,7 @@ func (c *Client) GetAdminLogs(mintime time.Time, options ...func(*url.Values)) (
 		opt(&params)
 	}
 
-	// Retrieve page of authentication logs
+	// Retrieve page of admin logs
 	resp, body, err := c.SignedCall(
 		http.MethodGet,
 		"/admin/v1/logs/administrator",
@@ -263,6 +263,86 @@ func (c *Client) GetAdminLogs(mintime time.Time, options ...func(*url.Values)) (
 
 	// Unmarshal received JSON into expected structure
 	result := &AdminLogResult{}
+	if err = json.Unmarshal(body, result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// V1 Telephony Logs
+
+// TelephonyLogResult is the structured JSON result of GetTelephonyLogs (for the V1 API).
+type TelephonyLogResult struct {
+	duoapi.StatResult
+	Logs TelephonyLogList `json:"response"`
+}
+
+// A TelephonyLog retrieved from https://duo.com/docs/adminapi#telephony-logs
+// TODO: @Duo update this to be a struct based on the returned JSON structure of a telephony log.
+type TelephonyLog map[string]interface{}
+
+// Timestamp parses and coerces the timestamp value of the log.
+func (log TelephonyLog) Timestamp() (time.Time, error) {
+	return parseLogV1Timestamp(log)
+}
+
+// An TelephonyLogList holds log entries and provides functionality used for pagination.
+type TelephonyLogList []TelephonyLog
+
+// GetNextOffset uses log timestamps to return an option that will configure a request to fetch the next page of logs. It returns nil when no more logs can be fetched.
+func (logs TelephonyLogList) GetNextOffset(maxtime time.Time) func(params *url.Values) {
+	// 1000 is the maximum page size for API V1 log endpoints. Receiving less than a full page indicates there are no more pages to fetch.
+	if len(logs) < 1000 {
+		return nil
+	}
+
+	// Gather log timestamps
+	timestamps := make([]time.Time, 0, len(logs))
+	for _, log := range logs {
+		ts, err := log.Timestamp()
+		if err != nil {
+			continue
+		}
+		timestamps = append(timestamps, ts)
+	}
+
+	return getLogListV1NextOffset(maxtime, timestamps...)
+}
+
+// GetTelephonyLogs retrieves a page of telephony logs with timestamps starting at mintime. It relies on the option provided by TelephonyLogResult.Logs.GetNextOffset() for pagination.
+// Calls GET /admin/v1/logs/telephony
+// See https://duo.com/docs/adminapi#telephony-logs
+func (c *Client) GetTelephonyLogs(mintime time.Time, options ...func(*url.Values)) (*TelephonyLogResult, error) {
+	// Format mintime parameter
+	min := mintime.UnixNano() / int64(time.Second)
+	mintimeStr := strconv.FormatInt(min, 10)
+
+	// Request defaults
+	params := url.Values{
+		"mintime": []string{mintimeStr},
+	}
+
+	// Configure request with additional options
+	for _, opt := range options {
+		opt(&params)
+	}
+
+	// Retrieve page of telephony logs
+	resp, body, err := c.SignedCall(
+		http.MethodGet,
+		"/admin/v1/logs/telephony",
+		params,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid HTTP response code from Duo API: [%d] %s", resp.StatusCode, resp.Status)
+	}
+
+	// Unmarshal received JSON into expected structure
+	result := &TelephonyLogResult{}
 	if err = json.Unmarshal(body, result); err != nil {
 		return nil, err
 	}
