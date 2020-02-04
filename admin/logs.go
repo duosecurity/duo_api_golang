@@ -12,6 +12,10 @@ import (
 	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
+
+// maxLogV1PageSize sets 1000 as the maximum page size for API V1 log endpoints.
+const maxLogV1PageSize = 1000
+
 /*
  * V2 Logs
  */
@@ -140,8 +144,8 @@ func parseLogV1Timestamp(log map[string]interface{}) (time.Time, error) {
 
 // getLogListV1NextOffset provides an option for pagination based on log timestamps. It returns nil when no more logs can be fetched.
 func getLogListV1NextOffset(end time.Time, timestamps ...time.Time) func(params *url.Values) {
-	// 1000 is the maximum page size for API V1 log endpoints. Receiving less than a full page indicates there are no more pages to fetch.
-	if len(timestamps) < 1000 {
+	// Receiving less than a full page indicates there are no more pages to fetch.
+	if len(timestamps) < maxLogV1PageSize {
 		return nil
 	}
 
@@ -212,8 +216,8 @@ type AdminLogList []AdminLog
 
 // GetNextOffset uses log timestamps to return an option that will configure a request to fetch the next page of logs. It returns nil when no more logs can be fetched.
 func (logs AdminLogList) GetNextOffset(maxtime time.Time) func(params *url.Values) {
-	// 1000 is the maximum page size for API V1 log endpoints. Receiving less than a full page indicates there are no more pages to fetch.
-	if len(logs) < 1000 {
+	// Receiving less than a full page indicates there are no more pages to fetch.
+	if len(logs) < maxLogV1PageSize {
 		return nil
 	}
 
@@ -292,8 +296,8 @@ type TelephonyLogList []TelephonyLog
 
 // GetNextOffset uses log timestamps to return an option that will configure a request to fetch the next page of logs. It returns nil when no more logs can be fetched.
 func (logs TelephonyLogList) GetNextOffset(maxtime time.Time) func(params *url.Values) {
-	// 1000 is the maximum page size for API V1 log endpoints. Receiving less than a full page indicates there are no more pages to fetch.
-	if len(logs) < 1000 {
+	// Receiving less than a full page indicates there are no more pages to fetch.
+	if len(logs) < maxLogV1PageSize {
 		return nil
 	}
 
