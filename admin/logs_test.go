@@ -7,9 +7,7 @@ import (
 	"net/url"
 	"testing"
 	"time"
-
 )
-
 
 /*
  * Logs
