@@ -12,7 +12,6 @@ import (
 	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
-
 // maxLogV1PageSize sets 1000 as the maximum page size for API V1 log endpoints.
 const maxLogV1PageSize = 1000
 
