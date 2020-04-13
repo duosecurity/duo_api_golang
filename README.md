@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/duosecurity/duo_api_golang.svg?branch=master)](https://travis-ci.org/duosecurity/duo_api_golang)
+
 # Overview
 
 **duo_api_golang** - Go language bindings for the Duo APIs (both auth and admin).
