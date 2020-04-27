@@ -1,10 +1,10 @@
+# Overview
+
 [![Build Status](https://travis-ci.org/duosecurity/duo_api_golang.svg?branch=master)](https://travis-ci.org/duosecurity/duo_api_golang)
 [![Issues](https://img.shields.io/github/issues/duosecurity/duo_api_golang)](https://github.com/duosecurity/duo_api_golang/issues)
 [![Forks](https://img.shields.io/github/forks/duosecurity/duo_api_golang)](https://github.com/duosecurity/duo_api_golang/network/members)
 [![Stars](https://img.shields.io/github/stars/duosecurity/duo_api_golang)](https://github.com/duosecurity/duo_api_golang/stargazers)
 [![License](https://img.shields.io/badge/License-View%20License-orange)](https://github.com/duosecurity/duo_api_golang/blob/master/LICENSE)
-
-# Overview
 
 **duo_api_golang** - Go language bindings for the Duo APIs (both auth and admin).
 
