@@ -75,6 +75,8 @@ type Phone struct {
 	Encrypted        string
 	Extension        string
 	Fingerprint      string
+	LastSeen         string `json:"last_seen"`
+	Model            string
 	Name             string
 	Number           string
 	PhoneID          string `json:"phone_id"`
