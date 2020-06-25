@@ -69,7 +69,9 @@ const getUsersResponse = `{
 				"push"
 			],
 			"platform": "Apple iOS",
+			"model": "Apple iPhone",
 			"activated": false,
+			"last_seen": "2019-03-04T15:04:04",
 			"sms_passcodes_sent": false
 		}],
 		"realname": "Joe Smith",
@@ -116,7 +118,9 @@ const getUserResponse = `{
 				"push"
 			],
 			"platform": "Apple iOS",
+			"model": "Apple iPhone",
 			"activated": false,
+			"last_seen": "2019-03-04T15:04:04",
 			"sms_passcodes_sent": false
 		}],
 		"realname": "Joe Smith",
@@ -203,7 +207,9 @@ const getUsersPage1Response = `{
 				"push"
 			],
 			"platform": "Apple iOS",
+			"model": "Apple iPhone",
 			"activated": false,
+			"last_seen": "2019-03-04T15:04:04",
 			"sms_passcodes_sent": false
 		}],
 		"realname": "Joe Smith",
@@ -255,7 +261,9 @@ const getUsersPage2Response = `{
 				"push"
 			],
 			"platform": "Apple iOS",
+			"model": "Apple iPhone",
 			"activated": false,
+			"last_seen": "2019-03-04T15:04:04",
 			"sms_passcodes_sent": false
 		}],
 		"realname": "Joe Smith",
@@ -566,6 +574,7 @@ const getUserPhonesResponse = `{
 	"stat": "OK",
 	"response": [{
 		"activated": false,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"sms",
 			"phone",
@@ -576,6 +585,7 @@ const getUserPhonesResponse = `{
 		"number": "+15035550102",
 		"phone_id": "DPFZRS9FB0D46QFTM890",
 		"platform": "Apple iOS",
+		"model": "Apple iPhone",
 		"postdelay": null,
 		"predelay": null,
 		"sms_passcodes_sent": false,
@@ -583,6 +593,7 @@ const getUserPhonesResponse = `{
 	},
 	{
 		"activated": false,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"phone"
 		],
@@ -591,6 +602,7 @@ const getUserPhonesResponse = `{
 		"number": "+15035550103",
 		"phone_id": "DPFZRS9FB0D46QFTM891",
 		"platform": "Unknown",
+		"model": "Unknown",
 		"postdelay": null,
 		"predelay": null,
 		"sms_passcodes_sent": false,
@@ -642,6 +654,7 @@ const getUserPhonesPage1Response = `{
 	"stat": "OK",
 	"response": [{
 		"activated": false,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"sms",
 			"phone",
@@ -652,6 +665,7 @@ const getUserPhonesPage1Response = `{
 		"number": "+15035550102",
 		"phone_id": "DPFZRS9FB0D46QFTM890",
 		"platform": "Apple iOS",
+		"model": "Apple iPhone",
 		"postdelay": null,
 		"predelay": null,
 		"sms_passcodes_sent": false,
@@ -659,6 +673,7 @@ const getUserPhonesPage1Response = `{
 	},
 	{
 		"activated": false,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"phone"
 		],
@@ -667,6 +682,7 @@ const getUserPhonesPage1Response = `{
 		"number": "+15035550103",
 		"phone_id": "DPFZRS9FB0D46QFTM891",
 		"platform": "Unknown",
+		"model": "Unknown",
 		"postdelay": null,
 		"predelay": null,
 		"sms_passcodes_sent": false,
@@ -683,6 +699,7 @@ const getUserPhonesPage2Response = `{
 	"stat": "OK",
 	"response": [{
 		"activated": false,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"sms",
 			"phone",
@@ -693,6 +710,7 @@ const getUserPhonesPage2Response = `{
 		"number": "+15035550102",
 		"phone_id": "DPFZRS9FB0D46QFTM890",
 		"platform": "Apple iOS",
+		"model": "Apple iPhone",
 		"postdelay": null,
 		"predelay": null,
 		"sms_passcodes_sent": false,
@@ -700,6 +718,7 @@ const getUserPhonesPage2Response = `{
 	},
 	{
 		"activated": false,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"phone"
 		],
@@ -708,6 +727,7 @@ const getUserPhonesPage2Response = `{
 		"number": "+15035550103",
 		"phone_id": "DPFZRS9FB0D46QFTM891",
 		"platform": "Unknown",
+		"model": "Unknown",
 		"postdelay": null,
 		"predelay": null,
 		"sms_passcodes_sent": false,
@@ -1262,6 +1282,7 @@ const getPhonesResponse = `{
 	"stat": "OK",
 	"response": [{
 		"activated": true,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"push",
 			"sms",
@@ -1275,6 +1296,7 @@ const getPhonesResponse = `{
 		"number": "+15555550100",
 		"phone_id": "DPFZRS9FB0D46QFTM899",
 		"platform": "Google Android",
+		"model": "Google Pixel",
 		"postdelay": "",
 		"predelay": "",
 		"screenlock": "Locked",
@@ -1343,6 +1365,7 @@ const getPhonesPage1Response = `{
 	"stat": "OK",
 	"response": [{
 		"activated": true,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"push",
 			"sms",
@@ -1356,6 +1379,7 @@ const getPhonesPage1Response = `{
 		"number": "+15555550100",
 		"phone_id": "DPFZRS9FB0D46QFTM899",
 		"platform": "Google Android",
+		"model": "Google Pixel",
 		"postdelay": "",
 		"predelay": "",
 		"screenlock": "Locked",
@@ -1389,6 +1413,7 @@ const getPhonesPage2Response = `{
 	"stat": "OK",
 	"response": [{
 		"activated": true,
+		"last_seen": "2019-03-04T15:04:04",
 		"capabilities": [
 			"push",
 			"sms",
@@ -1402,6 +1427,7 @@ const getPhonesPage2Response = `{
 		"number": "+15555550100",
 		"phone_id": "DPFZRS9FB0D46QFTM899",
 		"platform": "Google Android",
+		"model": "Google Pixel",
 		"postdelay": "",
 		"predelay": "",
 		"screenlock": "Locked",
@@ -1514,7 +1540,9 @@ const getPhoneResponse = `{
 			"push"
 		],
 		"platform": "Apple iOS",
+		"model": "Apple iPhone",
 		"activated": false,
+		"last_seen": "2019-03-04T15:04:04",
 		"sms_passcodes_sent": false,
 		"users": [{
 			"user_id": "DUJZ2U4L80HT45MQ4EOQ",
