@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -23,7 +24,7 @@ func TestCanonicalize(t *testing.T) {
 		"5")
 	params := strings.Split(params_str, "\n")
 	if len(params) != 5 {
-		t.Error("Expected 5 parameters, but got " + string(len(params)))
+		t.Error("Expected 5 parameters, but got " + strconv.Itoa(len(params)))
 	}
 	if params[1] != string("POST") {
 		t.Error("Expected POST, but got " + params[1])
@@ -240,18 +241,18 @@ func assertRateLimitedCall(
 	retriedRequestCount := expectedTotalCalls - 1
 
 	if len(httpClient.actualRequests) != expectedTotalCalls {
-		t.Fatal("Made " + string(len(httpClient.actualRequests)) +
-			" requests instead of " + string(expectedTotalCalls))
+		t.Fatal("Made " + strconv.Itoa(len(httpClient.actualRequests)) +
+			" requests instead of " + strconv.Itoa(expectedTotalCalls))
 	}
 
 	if len(sleepSvc.sleepCalls) != retriedRequestCount {
-		t.Fatal("Made " + string(len(sleepSvc.sleepCalls)) +
-			" sleep calls instead of " + string(retriedRequestCount))
+		t.Fatal("Made " + strconv.Itoa(len(sleepSvc.sleepCalls)) +
+			" sleep calls instead of " + strconv.Itoa(retriedRequestCount))
 	}
 	for i := range expectedSleepDurations {
 		if sleepSvc.sleepCalls[i] != expectedSleepDurations[i] {
-			t.Fatal("Slept for " + string(sleepSvc.sleepCalls[i]) +
-				" instead of " + string(expectedSleepDurations[i]))
+			t.Fatal("Slept for " + sleepSvc.sleepCalls[i].String() +
+				" instead of " + expectedSleepDurations[i].String())
 		}
 	}
 }
