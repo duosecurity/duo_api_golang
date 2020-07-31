@@ -161,6 +161,20 @@ func TestNewDuo(t *testing.T) {
 	}
 }
 
+func TestSetTransport(t *testing.T) {
+	transportOpt := func(tr *http.Transport) {
+		tr.MaxResponseHeaderBytes = 12345
+	}
+
+	duo := NewDuoApi("ABC", "123", "api-XXXXXXX.duosecurity.com", "go-client", SetTransport(transportOpt))
+
+	httpClient := duo.apiClient.(*http.Client)
+	transport := httpClient.Transport.(*http.Transport)
+	if transport.MaxResponseHeaderBytes != 12345 {
+		t.Fatal("SetTransport failed to update Duo HTTP client transport configuration")
+	}
+}
+
 func TestDupApiCallHttpErr(t *testing.T) {
 	httpClient := &mockHttpClient{doError: true}
 	sleepSvc := &mockSleepService{}
