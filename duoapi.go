@@ -90,9 +90,10 @@ func (svc timeSleepService) Sleep(duration time.Duration) {
 }
 
 type apiOptions struct {
-	timeout  time.Duration
-	insecure bool
-	proxy    func(*http.Request) (*url.URL, error)
+	timeout   time.Duration
+	insecure  bool
+	proxy     func(*http.Request) (*url.URL, error)
+	transport func(*http.Transport)
 }
 
 // Optional parameter for NewDuoApi, used to configure timeouts on API calls.
@@ -115,6 +116,13 @@ func SetInsecure() func(*apiOptions) {
 func SetProxy(proxy func(*http.Request) (*url.URL, error)) func(*apiOptions) {
 	return func(opts *apiOptions) {
 		opts.proxy = proxy
+	}
+}
+
+// SetTransport enables additional control over the HTTP transport used to connect to the Duo API.
+func SetTransport(transport func(*http.Transport)) func(*apiOptions) {
+	return func(opts *apiOptions) {
+		opts.transport = transport
 	}
 }
 
@@ -149,6 +157,10 @@ func NewDuoApi(ikey string,
 			InsecureSkipVerify: opts.insecure,
 		},
 	}
+	if opts.transport != nil {
+		opts.transport(tr)
+	}
+
 	return &DuoApi{
 		ikey:      ikey,
 		skey:      skey,
