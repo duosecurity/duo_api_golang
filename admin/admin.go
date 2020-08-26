@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/duosecurity/duo_api_golang"
+	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
 // Client provides access to Duo's admin API.
@@ -567,6 +567,24 @@ func (c *Client) GetPhone(phoneID string) (*GetPhoneResult, error) {
 	}
 
 	result := &GetPhoneResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// DeletePhone calls DELETE /admin/v1/phones/:phone_id
+// See https://duo.com/docs/adminapi#delete-phone
+func (c *Client) DeletePhone(phoneID string) (*duoapi.StatResult, error) {
+	path := fmt.Sprintf("/admin/v1/phones/%s", phoneID)
+
+	_, body, err := c.SignedCall(http.MethodDelete, path, nil, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &duoapi.StatResult{}
 	err = json.Unmarshal(body, result)
 	if err != nil {
 		return nil, err

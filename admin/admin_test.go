@@ -1580,6 +1580,30 @@ func TestGetPhone(t *testing.T) {
 	}
 }
 
+const deletePhoneResponse = `{
+	"stat": "OK",
+	"response": ""
+}`
+
+func TestDeletePhone(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, deletePhoneResponse)
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	result, err := duo.DeletePhone("DPFZRS9FB0D46QFTM899")
+	if err != nil {
+		t.Errorf("Unexpected error from DeletePhone call %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
+	}
+}
+
 const getTokensResponse = `{
 	"stat": "OK",
 	"response": [{
