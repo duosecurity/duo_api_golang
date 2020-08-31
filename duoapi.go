@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	version           = "1.0.0"
 	initialBackoffMS  = 1000
 	maxBackoffMS      = 32000
 	backoffFactor     = 2
@@ -160,12 +161,16 @@ func NewDuoApi(ikey string,
 	if opts.transport != nil {
 		opts.transport(tr)
 	}
+	newUserAgent := "duo_api_golang/" + version
+	if userAgent != "" {
+		newUserAgent += " " + userAgent
+	}
 
 	return &DuoApi{
 		ikey:      ikey,
 		skey:      skey,
 		host:      host,
-		userAgent: userAgent,
+		userAgent: newUserAgent,
 		apiClient: &http.Client{
 			Timeout:   opts.timeout,
 			Transport: tr,
@@ -226,8 +231,10 @@ func (duoapi *DuoApi) Call(method string,
 		Path:     uri,
 		RawQuery: params.Encode(),
 	}
+	headers := make(map[string]string)
+	headers["user-agent"] = duoapi.userAgent
 
-	return duoapi.makeRetryableHttpCall(method, url, nil, nil, options...)
+	return duoapi.makeRetryableHttpCall(method, url, headers, nil, options...)
 }
 
 // Make a signed Duo Rest API call.  See Duo's online documentation
@@ -259,6 +266,7 @@ func (duoapi *DuoApi) SignedCall(method string,
 	}
 
 	headers := make(map[string]string)
+	headers["user-agent"] = duoapi.userAgent
 	headers["Authorization"] = auth_sig
 	headers["Date"] = now
 	var requestBody io.ReadCloser = nil
