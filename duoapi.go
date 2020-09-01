@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	version           = "1.0.0"
+	version           = "0.1.0"
 	initialBackoffMS  = 1000
 	maxBackoffMS      = 32000
 	backoffFactor     = 2
