@@ -161,16 +161,16 @@ func NewDuoApi(ikey string,
 	if opts.transport != nil {
 		opts.transport(tr)
 	}
-	newUserAgent := "duo_api_golang/" + version
-	if userAgent != "" {
-		newUserAgent += " " + userAgent
+
+	if userAgent == "" {
+		userAgent = "duo_api_golang/" + version
 	}
 
 	return &DuoApi{
 		ikey:      ikey,
 		skey:      skey,
 		host:      host,
-		userAgent: newUserAgent,
+		userAgent: userAgent,
 		apiClient: &http.Client{
 			Timeout:   opts.timeout,
 			Transport: tr,
