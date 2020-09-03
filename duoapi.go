@@ -269,7 +269,7 @@ func (duoapi *DuoApi) SignedCall(method string,
 	}
 
 	headers := make(map[string]string)
-	headers["user-agent"] = duoapi.userAgent
+	headers["User-Agent"] = duoapi.userAgent
 	headers["Authorization"] = auth_sig
 	headers["Date"] = now
 	var requestBody io.ReadCloser = nil
