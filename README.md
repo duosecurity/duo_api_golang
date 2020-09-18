@@ -23,3 +23,15 @@ The Admin API provides programmatic access to the administrative functionality o
 This module's API client implementation is *incomplete*; methods for fetching most entity types are exported, but methods that modify entities have (mostly) not yet been implemented. PRs welcome!
 
 For more information see the [Admin API guide](https://duo.com/docs/adminapi).
+
+## Testing
+
+```
+$ go test -v -race ./...
+```
+
+## Linting
+
+```
+$ gofmt -d .
+```
