@@ -134,7 +134,7 @@ func TestGetAuthLogs(t *testing.T) {
 	if length := len(result.Response.Logs); length != 1 {
 		t.Errorf("Expected 1 log, but got %d", length)
 	}
-	if txid := result.Response.Logs[0]["txid"]; txid != "340a23e3-23f3-23c1-87dc-1491a23dfdbb" {
+	if txid := result.Response.Logs[0].TxID; txid != "340a23e3-23f3-23c1-87dc-1491a23dfdbb" {
 		t.Errorf("Expected txid '340a23e3-23f3-23c1-87dc-1491a23dfdbb', but got %v", txid)
 	}
 	if next := result.Response.Metadata.GetNextOffset(); next == nil {
