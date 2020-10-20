@@ -410,6 +410,36 @@ func (c *Client) retrieveUserU2FTokens(userID string, params url.Values) (*GetU2
 	return result, nil
 }
 
+// StringArrayResult models response containing an array of strings.
+type StringArrayResult struct {
+	duoapi.StatResult
+	Response []string
+}
+
+// GetUserBypassCodes calls POST /admin/v1/users/:user_id/bypass_codes
+// see https://duo.com/docs/adminapi#create-bypass-codes-for-user
+func (c *Client) GetUserBypassCodes(userID string, options ...func(*url.Values)) (*StringArrayResult, error) {
+	path := fmt.Sprintf("/admin/v1/users/%s/bypass_codes", userID)
+
+	params := url.Values{}
+	for _, o := range options {
+		o(&params)
+	}
+
+	_, body, err := c.SignedCall(http.MethodPost, path, params, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &StringArrayResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // Group methods
 
 // GetGroupsResult models responses containing a list of groups.
