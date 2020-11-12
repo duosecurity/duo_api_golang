@@ -1,0 +1,22 @@
+name: Golang CI
+on: [push, pull_request]
+
+jobs:
+    build-and-test:
+        runs-on: ubuntu-latest
+
+        strategy:
+            matrix:
+                go: [1.14.x, 1.15.x]
+        steps:
+            - uses: actions/checkout@v2
+            - name: Set up Golang
+              uses: actions/setup-go@v2
+              with:
+                go-version: ${{ matrix.go }}
+            - name: Lint
+              run: diff -u <(echo -n) <(gofmt -d .)
+            - name: Build
+              run: go build ./...
+            - name: Test
+              run: go test -v -race ./...
