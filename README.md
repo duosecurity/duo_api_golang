@@ -1,6 +1,6 @@
 # Overview
 
-[![Build Status](https://travis-ci.org/duosecurity/duo_api_golang.svg?branch=master)](https://travis-ci.org/duosecurity/duo_api_golang)
+[![Build Status](https://github.com/duosecurity/duo_api_golang/workflows/Golang%20CI/badge.svg)](https://github.com/duosecurity/duo_api_golang/actions)
 [![Issues](https://img.shields.io/github/issues/duosecurity/duo_api_golang)](https://github.com/duosecurity/duo_api_golang/issues)
 [![Forks](https://img.shields.io/github/forks/duosecurity/duo_api_golang)](https://github.com/duosecurity/duo_api_golang/network/members)
 [![Stars](https://img.shields.io/github/stars/duosecurity/duo_api_golang)](https://github.com/duosecurity/duo_api_golang/stargazers)
