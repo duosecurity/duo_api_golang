@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 
 	duoapi "github.com/duosecurity/duo_api_golang"
-	"github.com/google/go-querystring/query"
 )
 
 // Client provides access to Duo's admin API.
@@ -37,24 +37,53 @@ func New(base duoapi.DuoApi) *Client {
 
 // User models a single user.
 type User struct {
-	Alias1            *string `url:"alias1,omitempty"`
-	Alias2            *string `url:"alias2,omitempty"`
-	Alias3            *string `url:"alias3,omitempty"`
-	Alias4            *string `url:"alias4,omitempty"`
-	Created           uint64  `url:"created"`
+	Alias1            *string `url:"alias1"`
+	Alias2            *string `url:"alias2"`
+	Alias3            *string `url:"alias3"`
+	Alias4            *string `url:"alias4"`
+	Created           uint64
 	Email             string  `url:"email"`
-	FirstName         *string `url:"firstname,omitempty"`
+	FirstName         *string `url:"firstname"`
 	Groups            []Group
 	LastDirectorySync *uint64 `json:"last_directory_sync"`
 	LastLogin         *uint64 `json:"last_login"`
-	LastName          *string `url:"lastname,omitempty"`
-	Notes             string  `url:"notes,omitempty"`
+	LastName          *string `url:"lastname"`
+	Notes             string  `url:"notes"`
 	Phones            []Phone
-	RealName          *string `url:"realname,omitempty"`
+	RealName          *string `url:"realname"`
 	Status            string  `url:"status"`
 	Tokens            []Token
 	UserID            string `json:"user_id"`
 	Username          string `url:"username"`
+}
+
+// URLValues transforms a User into url.Values using the 'url' struct tag to
+// define the key of the map. Fields are skiped if the value is empty.
+func (u *User) URLValues() url.Values {
+	params := url.Values{}
+
+	t := reflect.TypeOf(u).Elem()
+	v := reflect.ValueOf(u).Elem()
+
+	// Iterate over all available struct fields
+	for i := 0; i < t.NumField(); i++ {
+		tag := t.Field(i).Tag.Get("url")
+		if tag == "" {
+			continue
+		}
+		// Skip fields have a zero value.
+		if v.Field(i).Interface() == reflect.Zero(v.Field(i).Type()).Interface() {
+			continue
+		}
+		var val string
+		if t.Field(i).Type.Kind() == reflect.Ptr {
+			val = fmt.Sprintf("%v", v.Field(i).Elem())
+		} else {
+			val = fmt.Sprintf("%v", v.Field(i))
+		}
+		params[tag] = []string{val}
+	}
+	return params
 }
 
 // Group models a group to which users may belong.
@@ -246,13 +275,8 @@ func (c *Client) GetUser(userID string) (*GetUserResult, error) {
 
 // CreateUser calls POST /admin/v1/users
 // See https://duo.com/docs/adminapi#create-user
-func (c *Client) CreateUser(userToCreate User) (*GetUserResult, error) {
+func (c *Client) CreateUser(params url.Values) (*GetUserResult, error) {
 	path := "/admin/v1/users"
-
-	params, err := query.Values(userToCreate)
-	if err != nil {
-		return nil, err
-	}
 
 	_, body, err := c.SignedCall(http.MethodPost, path, params, duoapi.UseTimeout)
 	if err != nil {
@@ -269,13 +293,8 @@ func (c *Client) CreateUser(userToCreate User) (*GetUserResult, error) {
 
 // ModifyUser calls POST /admin/v1/users/:user_id
 // See https://duo.com/docs/adminapi#modify-user
-func (c *Client) ModifyUser(userID string, userToModify User) (*GetUserResult, error) {
+func (c *Client) ModifyUser(userID string, params url.Values) (*GetUserResult, error) {
 	path := fmt.Sprintf("/admin/v1/users/%s", userID)
-
-	params, err := query.Values(userToModify)
-	if err != nil {
-		return nil, err
-	}
 
 	_, body, err := c.SignedCall(http.MethodPost, path, params, duoapi.UseTimeout)
 	if err != nil {

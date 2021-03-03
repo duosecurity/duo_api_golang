@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -135,6 +136,104 @@ const getUserResponse = `{
 	}
 }`
 
+func TestUser_URLValues(t *testing.T) {
+	type fields struct {
+		Alias1            *string
+		Alias2            *string
+		Alias3            *string
+		Alias4            *string
+		Created           uint64
+		Email             string
+		FirstName         *string
+		Groups            []Group
+		LastDirectorySync *uint64
+		LastLogin         *uint64
+		LastName          *string
+		Notes             string
+		Phones            []Phone
+		RealName          *string
+		Status            string
+		Tokens            []Token
+		UserID            string
+		Username          string
+	}
+
+	exAlias := "smith"
+
+	tests := []struct {
+		name   string
+		fields fields
+		want   url.Values
+	}{
+		{
+			name: "Simple",
+			fields: fields{
+				Username: "jsmith",
+				Status:   "active",
+				Email:    "jsmith@example.com",
+				Notes:    "this is a test user",
+			},
+			want: url.Values(map[string][]string{
+				"username": {"jsmith"},
+				"status":   {"active"},
+				"email":    {"jsmith@example.com"},
+				"notes":    {"this is a test user"},
+			}),
+		},
+		{
+			name: "Example with pointer",
+			fields: fields{
+				Alias1:   &exAlias,
+				Username: "jsmith",
+			},
+			want: url.Values(map[string][]string{
+				"alias1":   {"smith"},
+				"username": {"jsmith"},
+			}),
+		},
+		{
+			name: "Untagged",
+			fields: fields{
+				Username: "jsmith",
+				Created:  1234,
+				Groups:   []Group{{Name: "group1"}},
+				Phones:   []Phone{{Name: "phone1"}},
+				Tokens:   []Token{{TokenID: "token1"}},
+			},
+			want: url.Values(map[string][]string{
+				"username": {"jsmith"}},
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u := &User{
+				Alias1:            tt.fields.Alias1,
+				Alias2:            tt.fields.Alias2,
+				Alias3:            tt.fields.Alias3,
+				Alias4:            tt.fields.Alias4,
+				Created:           tt.fields.Created,
+				Email:             tt.fields.Email,
+				FirstName:         tt.fields.FirstName,
+				Groups:            tt.fields.Groups,
+				LastDirectorySync: tt.fields.LastDirectorySync,
+				LastLogin:         tt.fields.LastLogin,
+				LastName:          tt.fields.LastName,
+				Notes:             tt.fields.Notes,
+				Phones:            tt.fields.Phones,
+				RealName:          tt.fields.RealName,
+				Status:            tt.fields.Status,
+				Tokens:            tt.fields.Tokens,
+				UserID:            tt.fields.UserID,
+				Username:          tt.fields.Username,
+			}
+			if got := u.URLValues(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("User.URLValues() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetUsers(t *testing.T) {
 	var last_request *http.Request
 	ts := httptest.NewTLSServer(
@@ -210,7 +309,7 @@ func TestCreateUser(t *testing.T) {
 		Status:   "active",
 	}
 
-	result, err := duo.CreateUser(userToCreate)
+	result, err := duo.CreateUser(userToCreate.URLValues())
 	if err != nil {
 		t.Errorf("Unexpected error from CreateUser call %v", err.Error())
 	}
@@ -287,7 +386,7 @@ func TestModifyUser(t *testing.T) {
 		Email:  "jsmith-new@example.com",
 	}
 
-	result, err := duo.ModifyUser(userToModify.UserID, userToModify)
+	result, err := duo.ModifyUser(userToModify.UserID, userToModify.URLValues())
 	if err != nil {
 		t.Errorf("Unexpected error from ModifyUser call %v", err.Error())
 	}
