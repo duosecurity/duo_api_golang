@@ -515,6 +515,47 @@ func (c *Client) GetGroup(groupID string) (*GetGroupResult, error) {
 	return result, nil
 }
 
+// AssociateUserGroup calls POST /admin/v1/users/:user_id/groups
+// See https://duo.com/docs/adminapi#associate-group-with-user
+func (c *Client) AssociateUserGroup(userID, groupID string) (*StringResult, error) {
+	path := fmt.Sprintf("/admin/v1/users/%s/groups", userID)
+
+	params := url.Values{}
+	params.Set("group_id", groupID)
+
+	_, body, err := c.SignedCall(http.MethodPost, path, params, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &StringResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// DisassociateUserGroup calls DELETE /admin/v1/users/:user_id/groups/:group_id
+// See https://duo.com/docs/adminapi#disassociate-group-from-user
+func (c *Client) DisassociateUserGroup(userID, groupID string) (*StringResult, error) {
+	path := fmt.Sprintf("/admin/v1/users/%s/groups/%s", userID, groupID)
+
+	params := url.Values{}
+
+	_, body, err := c.SignedCall(http.MethodDelete, path, params, duoapi.UseTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &StringResult{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // Phone methods
 
 // GetPhonesNumber sets the optional number parameter for a GetPhones request.
