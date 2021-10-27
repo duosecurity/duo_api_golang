@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -135,6 +136,104 @@ const getUserResponse = `{
 	}
 }`
 
+func TestUser_URLValues(t *testing.T) {
+	type fields struct {
+		Alias1            *string
+		Alias2            *string
+		Alias3            *string
+		Alias4            *string
+		Created           uint64
+		Email             string
+		FirstName         *string
+		Groups            []Group
+		LastDirectorySync *uint64
+		LastLogin         *uint64
+		LastName          *string
+		Notes             string
+		Phones            []Phone
+		RealName          *string
+		Status            string
+		Tokens            []Token
+		UserID            string
+		Username          string
+	}
+
+	exAlias := "smith"
+
+	tests := []struct {
+		name   string
+		fields fields
+		want   url.Values
+	}{
+		{
+			name: "Simple",
+			fields: fields{
+				Username: "jsmith",
+				Status:   "active",
+				Email:    "jsmith@example.com",
+				Notes:    "this is a test user",
+			},
+			want: url.Values(map[string][]string{
+				"username": {"jsmith"},
+				"status":   {"active"},
+				"email":    {"jsmith@example.com"},
+				"notes":    {"this is a test user"},
+			}),
+		},
+		{
+			name: "Example with pointer",
+			fields: fields{
+				Alias1:   &exAlias,
+				Username: "jsmith",
+			},
+			want: url.Values(map[string][]string{
+				"alias1":   {"smith"},
+				"username": {"jsmith"},
+			}),
+		},
+		{
+			name: "Untagged",
+			fields: fields{
+				Username: "jsmith",
+				Created:  1234,
+				Groups:   []Group{{Name: "group1"}},
+				Phones:   []Phone{{Name: "phone1"}},
+				Tokens:   []Token{{TokenID: "token1"}},
+			},
+			want: url.Values(map[string][]string{
+				"username": {"jsmith"}},
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u := &User{
+				Alias1:            tt.fields.Alias1,
+				Alias2:            tt.fields.Alias2,
+				Alias3:            tt.fields.Alias3,
+				Alias4:            tt.fields.Alias4,
+				Created:           tt.fields.Created,
+				Email:             tt.fields.Email,
+				FirstName:         tt.fields.FirstName,
+				Groups:            tt.fields.Groups,
+				LastDirectorySync: tt.fields.LastDirectorySync,
+				LastLogin:         tt.fields.LastLogin,
+				LastName:          tt.fields.LastName,
+				Notes:             tt.fields.Notes,
+				Phones:            tt.fields.Phones,
+				RealName:          tt.fields.RealName,
+				Status:            tt.fields.Status,
+				Tokens:            tt.fields.Tokens,
+				UserID:            tt.fields.UserID,
+				Username:          tt.fields.Username,
+			}
+			if got := u.URLValues(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("User.URLValues() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetUsers(t *testing.T) {
 	var last_request *http.Request
 	ts := httptest.NewTLSServer(
@@ -167,6 +266,162 @@ func TestGetUsers(t *testing.T) {
 	}
 	if request_query["offset"][0] != "0" {
 		t.Errorf("Expected to see an offset of 0 in request, bug got %s", request_query["offset"])
+	}
+}
+
+const createUserResponse = `{
+	"stat": "OK",
+	"response": {
+		"alias1": null,
+		"alias2": null,
+		"alias3": null,
+		"alias4": null,
+		"created": 1489612729,
+		"email": "jsmith@example.com",
+		"firstname": null,
+		"groups": [],
+		"last_directory_sync": null,
+		"last_login": null,
+		"lastname": null,
+		"notes": "",
+		"phones": [],
+		"realname": null,
+		"status": "active",
+		"tokens": [],
+		"user_id": "DU3RP9I2WOC59VZX672N",
+		"username": "jsmith"
+	}
+}`
+
+func TestCreateUser(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, createUserResponse)
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	userToCreate := User{
+		Username: "jsmith",
+		Email:    "jsmith@example.com",
+		Status:   "active",
+	}
+
+	result, err := duo.CreateUser(userToCreate.URLValues())
+	if err != nil {
+		t.Errorf("Unexpected error from CreateUser call %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
+	}
+	if result.Response.Username != userToCreate.Username {
+		t.Errorf("Expected Username to be %s, but got %s", userToCreate.Username, result.Response.Username)
+	}
+	if result.Response.Email != userToCreate.Email {
+		t.Errorf("Expected Email to be %s, but got %s", userToCreate.Email, result.Response.Email)
+	}
+}
+
+const modifyUserResponse = `{
+	"stat": "OK",
+	"response": {
+		"alias1": "joe.smith",
+		"alias2": "jsmith@example.com",
+		"alias3": null,
+		"alias4": null,
+		"created": 1489612729,
+		"email": "jsmith-new@example.com",
+		"firstname": "Joe",
+		"groups": [{
+			"desc": "People with hardware tokens",
+			"name": "token_users"
+		}],
+		"last_directory_sync": 1508789163,
+		"last_login": 1343921403,
+		"lastname": "Smith",
+		"notes": "",
+		"phones": [{
+			"phone_id": "DPFZRS9FB0D46QFTM899",
+			"number": "+15555550100",
+			"extension": "",
+			"name": "",
+			"postdelay": null,
+			"predelay": null,
+			"type": "Mobile",
+			"capabilities": [
+				"sms",
+				"phone",
+				"push"
+			],
+			"platform": "Apple iOS",
+			"activated": false,
+			"sms_passcodes_sent": false
+		}],
+		"realname": "Joe Smith",
+		"status": "active",
+		"tokens": [{
+			"serial": "0",
+			"token_id": "DHIZ34ALBA2445ND4AI2",
+			"type": "d1"
+		}],
+		"user_id": "DU3RP9I2WOC59VZX672N",
+		"username": "jsmith"
+	}
+}`
+
+func TestModifyUser(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, modifyUserResponse)
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	userToModify := User{
+		UserID: "DU3RP9I2WOC59VZX672N",
+		Email:  "jsmith-new@example.com",
+	}
+
+	result, err := duo.ModifyUser(userToModify.UserID, userToModify.URLValues())
+	if err != nil {
+		t.Errorf("Unexpected error from ModifyUser call %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
+	}
+	if result.Response.UserID != userToModify.UserID {
+		t.Errorf("Expected UserID to be %s, but got %s", userToModify.UserID, result.Response.UserID)
+	}
+	if result.Response.Email != userToModify.Email {
+		t.Errorf("Expected Email to be %s, but got %s", userToModify.Email, result.Response.Email)
+	}
+}
+
+const deleteUserResponse = `{
+	"stat": "OK",
+	"response": ""
+}`
+
+func TestDeleteUser(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, deleteUserResponse)
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	result, err := duo.DeleteUser("DU3RP9I2WOC59VZX672N")
+	if err != nil {
+		t.Errorf("Unexpected error from DeleteUser call %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
 	}
 }
 
@@ -567,6 +822,54 @@ func TestGetUserGroupsPageArgs(t *testing.T) {
 	}
 	if request_query["offset"][0] != "1" {
 		t.Errorf("Expected to see an offset of 0 in request, bug got %s", request_query["offset"])
+	}
+}
+
+const associateGroupWithUserResponse = `{
+	"stat": "OK",
+	"response": ""
+}`
+
+func TestAssociateGroupWithUser(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, associateGroupWithUserResponse)
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	result, err := duo.AssociateGroupWithUser("DU3RP9I2WOC59VZX672N", "DGXXXXXXXXXXXXXXXXXX")
+	if err != nil {
+		t.Errorf("Unexpected error from AssociateGroupWithUser call %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
+	}
+}
+
+const disassociateGroupFromUserResponse = `{
+	"stat": "OK",
+	"response": ""
+}`
+
+func TestDisassociateGroupFromUser(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, associateGroupWithUserResponse)
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	result, err := duo.DisassociateGroupFromUser("DU3RP9I2WOC59VZX672N", "DGXXXXXXXXXXXXXXXXXX")
+	if err != nil {
+		t.Errorf("Unexpected error from DisassociateGroupFromUser call %v", err.Error())
+	}
+	if result.Stat != "OK" {
+		t.Errorf("Expected OK, but got %s", result.Stat)
 	}
 }
 
