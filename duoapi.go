@@ -323,6 +323,8 @@ func (duoapi *DuoApi) makeRetryableHttpCall(
 			return resp, body, err
 		}
 
+		resp.Body.Close()
+
 		duoapi.sleepSvc.Sleep(time.Millisecond * time.Duration(backoffMs))
 		backoffMs *= backoffFactor
 	}
