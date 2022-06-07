@@ -214,6 +214,13 @@ type StatResult struct {
 	Message_Detail *string
 }
 
+// SetCustomHTTPClient allows one to set a completely custom http client that
+// will be used to make network calls to the duo api
+func (duoapi *DuoApi) SetCustomHTTPClient(c *http.Client) {
+	duoapi.apiClient = c
+	duoapi.authClient = c
+}
+
 // Make an unsigned Duo Rest API call.  See Duo's online documentation
 // for the available REST API's.
 // method is POST or GET
