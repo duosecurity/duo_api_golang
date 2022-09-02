@@ -125,8 +125,7 @@ func TestSign(t *testing.T) {
 		"/accounts/v1/account/list",
 		"Tue, 21 Aug 2012 17:29:18 -0000",
 		values)
-	if res != "Basic RElXSjhYNkFFWU9SNU9NQzZUUTE6MmQ5N2Q2MTY2MzE5Nzgx"+
-		"YjVhM2EwN2FmMzlkMzY2ZjQ5MTIzNGVkYw==" {
+	if res != "Basic RElXSjhYNkFFWU9SNU9NQzZUUTE6MWJmZmI4OTI0MzQ4ZjdkYjdkYTllN2Q3ZDc0OWRlZDkzYWFmZDAyZDhlOTA0OTYwZGE3Yjk2YzU3NTEwMjIwMTg1YTY0YTI4MjdlZThmMjRhYzVkMzA4MDJhOWVlOTdlNTlkZTQ0YjMwNGIxODI0MmYwZDU5NmQxNWE4MTIyYWY=" {
 		t.Error("Signature did not produce output documented at " +
 			"https://www.duosecurity.com/docs/authapi :(")
 	}
