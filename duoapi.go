@@ -2,7 +2,7 @@ package duoapi
 
 import (
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha512"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -62,7 +62,7 @@ func sign(ikey string,
 	date string,
 	params url.Values) string {
 	canon := canonicalize(method, host, uri, params, date)
-	mac := hmac.New(sha1.New, []byte(skey))
+	mac := hmac.New(sha512.New, []byte(skey))
 	mac.Write([]byte(canon))
 	sig := hex.EncodeToString(mac.Sum(nil))
 	auth := ikey + ":" + sig
