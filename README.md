@@ -8,6 +8,10 @@
 
 **duo_api_golang** - Go language bindings for the Duo APIs (both auth and admin).
 
+## TLS 1.2 and 1.3 Support
+
+Duo_api_golang uses the Go cryptography library for TLS operations.  Go versions 1.13 and higher support both TLS 1.2 and 1.3.
+
 ## Duo Auth API
 
 The Auth API is a low-level, RESTful API for adding strong two-factor authentication to your website or application.
