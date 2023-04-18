@@ -9,6 +9,7 @@ on:
     
 jobs:
     build-and-test:
+        name: Golang CI - test
         runs-on: ubuntu-latest
 
         strategy:
