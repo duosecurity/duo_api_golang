@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/duosecurity/duo_api_golang"
+	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
 type AuthApi struct {
@@ -313,7 +313,7 @@ type AuthResult struct {
 // Duo's Auth method. https://www.duosecurity.com/docs/authapi#/auth
 // Factor must be one of 'auto', 'push', 'passcode', 'sms' or 'phone'.
 // Use AuthUserId to specify the user_id.
-// Use AuthUsername to speicy the username.  You must specify either AuthUserId
+// Use AuthUsername to specify the username.  You must specify either AuthUserId
 // or AuthUsername, but not both.
 // Use AuthIpAddr to include the client's IP address.
 // Use AuthAsync to toggle whether the call blocks for the user's response or not.
