@@ -14,7 +14,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -344,7 +343,7 @@ func (duoapi *DuoApi) SignedCall(method string,
 	return duoapi.makeRetryableHttpCall(method, url, headers, requestBody, options...)
 }
 
-type JSONParams map[string]any
+type JSONParams map[string]interface{}
 
 // Make a signed Duo Rest API call that takes JSON as an argument.
 // See Duo's online documentation for the available REST API's.
@@ -365,8 +364,11 @@ func (duoapi *DuoApi) JSONSignedCall(method string,
 	params JSONParams,
 	options ...DuoApiOption) (*http.Response, []byte, error) {
 
-	body_methods := []string{"POST", "PUT", "PATCH"}
-	params_go_in_body := slices.Contains(body_methods, method)
+	body_methods := make(map[string]struct{})
+	body_methods["POST"] = struct{}{}
+	body_methods["PUT"] = struct{}{}
+	body_methods["PATCH"] = struct{}{}
+	_, params_go_in_body := body_methods[method]
 
 	now := time.Now().UTC().Format(time.RFC1123Z)
 	var body string
