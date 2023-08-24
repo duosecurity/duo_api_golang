@@ -1,3 +1,3 @@
 module github.com/duosecurity/duo_api_golang
 
-go 1.15
+go 1.18
