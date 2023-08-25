@@ -347,7 +347,7 @@ type JSONParams map[string]interface{}
 
 // Make a signed Duo Rest API call that takes JSON as an argument.
 // See Duo's online documentation for the available REST API's.
-// method is POST or GET
+// method is one of GET, POST, PATCH, PUT, DELETE
 // uri is the URI of the Duo Rest call
 // json is the JSON parameters to include in the call.
 // options Optional parameters.  Use UseTimeout to toggle whether the
