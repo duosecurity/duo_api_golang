@@ -337,7 +337,7 @@ func (duoapi *DuoApi) SignedCall(method string,
 	var requestBody io.ReadCloser = nil
 	if method == "POST" || method == "PUT" {
 		headers["Content-Type"] = "application/x-www-form-urlencoded"
-		requestBody = io.NopCloser(strings.NewReader(params.Encode()))
+		requestBody = ioutil.NopCloser(strings.NewReader(params.Encode()))
 	}
 
 	return duoapi.makeRetryableHttpCall(method, url, headers, requestBody, options...)
@@ -402,7 +402,7 @@ func (duoapi *DuoApi) JSONSignedCall(method string,
 	var requestBody io.ReadCloser = nil
 	if params_go_in_body {
 		headers["Content-Type"] = "application/json"
-		requestBody = io.NopCloser(strings.NewReader(body))
+		requestBody = ioutil.NopCloser(strings.NewReader(body))
 	}
 
 	return duoapi.makeRetryableHttpCall(method, api_url, headers, requestBody, options...)
