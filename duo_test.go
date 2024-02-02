@@ -3,7 +3,7 @@ package duoapi
 import (
 	"bytes"
 	"errors"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -262,11 +262,11 @@ func getMockClients(httpResponses []http.Response) (*DuoApi, *mockHttpClient, *m
 
 var okResp = http.Response{
 	StatusCode: 200,
-	Body:       io.NopCloser(bytes.NewReader([]byte("hello world"))),
+	Body:       ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
 }
 var rateLimitResp = http.Response{
 	StatusCode: 429,
-	Body:       io.NopCloser(bytes.NewReader([]byte("hello world"))),
+	Body:       ioutil.NopCloser(bytes.NewReader([]byte("hello world"))),
 }
 
 var completeRateLimitSleepDurations = []time.Duration{
