@@ -380,18 +380,21 @@ func (duoapi *DuoApi) JSONSignedCall(method string,
 
 	url_values := url.Values{}
 	if params_go_in_body {
-		body_bytes, _ := json.Marshal(params)
+		body_bytes, err := json.Marshal(params)
+		if err != nil {
+			return nil, nil, err
+		}
 		body = string(body_bytes[:])
 	} else {
 		body = ""
 		var err error
 		url_values, err = jsonToValues(params)
-		if err == nil {
-			api_url.RawQuery = url_values.Encode()
-		} else {
+		if err != nil {
 			return nil, nil, err
 		}
+		api_url.RawQuery = url_values.Encode()
 	}
+
 	auth_sig := signV5(duoapi.ikey, duoapi.skey, method, duoapi.host, uri, now, url_values, body)
 
 	method = strings.ToUpper(method)
