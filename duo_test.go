@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -131,7 +132,26 @@ func TestSign(t *testing.T) {
 	}
 }
 
-func TestV2Canonicalize(t *testing.T) {
+func TestSignV5(t *testing.T) {
+	values := url.Values{}
+	values.Set("realname", "First Last")
+	body := "{\"txid\":\"f22b1678-252a-4070-b176-0ca2be7319fd\"}"
+	res := signV5("DIWJ8X6AEYOR5OMC6TQ1",
+		"Zh5eGmUq9zpfQnyUIu5OL9iWoMMv5ZNmk3zLJ4Ep",
+		"POST",
+		"api-XXXXXXXX.duosecurity.com",
+		"/accounts/v1/account/list",
+		"Tue, 21 Aug 2012 17:29:18 -0000",
+		values,
+		body)
+	expected := "Basic RElXSjhYNkFFWU9SNU9NQzZUUTE6NzhmNDMyN2Y4MzExNzNjYzc4ZDA5MDdlOTEzZTNjNWEyOGZlNzJkZDQ1NDVhMzQyNTg2YmI2NzE4MWYyYmEzOTNkMjA5MTFlODcwMzYyZjZmYWJhM2RjNmY3ZTlkYjVlOTNhZWQyZjNiZmMxMTBjNmRhZGFmZjRkYzYxNzllMGI="
+	if res != expected {
+		t.Error("Mismatch between expected and received\n" + "Expected: " + expected + "\nReceived: " + res)
+	}
+
+}
+
+func TestCanonicalizeV2(t *testing.T) {
 	values := url.Values{}
 	values.Set("䚚⡻㗐軳朧倪ࠐ킑È셰",
 		"ཅ᩶㐚敌숿鬉ꯢ荃ᬧ惐")
@@ -150,6 +170,29 @@ func TestV2Canonicalize(t *testing.T) {
 	expected := "Fri, 07 Dec 2012 17:18:00 -0000\nPOST\nfoo.bar52.com\n/Foo/BaR2/qux\n%E4%9A%9A%E2%A1%BB%E3%97%90%E8%BB%B3%E6%9C%A7%E5%80%AA%E0%A0%90%ED%82%91%C3%88%EC%85%B0=%E0%BD%85%E1%A9%B6%E3%90%9A%E6%95%8C%EC%88%BF%E9%AC%89%EA%AF%A2%E8%8D%83%E1%AC%A7%E6%83%90&%E7%91%89%E7%B9%8B%EC%B3%BB%E5%A7%BF%EF%B9%9F%E8%8E%B7%EA%B7%8C%E9%80%8C%EC%BF%91%E7%A0%93=%E8%B6%B7%E5%80%A2%E9%8B%93%E4%8B%AF%E2%81%BD%E8%9C%B0%EA%B3%BE%E5%98%97%E0%A5%86%E4%B8%B0&%E7%91%B0%E9%8C%94%E9%80%9C%E9%BA%AE%E4%83%98%E4%88%81%E8%8B%98%E8%B1%B0%E1%B4%B1%EA%81%82=%E1%9F%99%E0%AE%A8%E9%8D%98%EA%AB%9F%EA%90%AA%E4%A2%BE%EF%AE%96%E6%BF%A9%EB%9F%BF%E3%8B%B3&%EC%8B%85%E2%B0%9D%E2%98%A0%E3%98%97%E9%9A%B3F%E8%98%85%E2%83%A8%EA%B0%A1%E5%A4%B4=%EF%AE%A9%E4%86%AA%EB%B6%83%E8%90%8B%E2%98%95%E3%B9%AE%E6%94%AD%EA%A2%B5%ED%95%ABU"
 	if canon != expected {
 		t.Error("Mismatch!\n" + expected + "\n" + canon)
+	}
+}
+
+func TestCanonicalizeV5(t *testing.T) {
+	values := url.Values{}
+	values.Set("username", "H ell?o")
+	body := "{\"activation_code\":\"duo://x1bTAIQGWXppdi2ctPVn-YXBpLWR1bzEuZHVvLnRlc3Q\",\"user_id\":\"DU439XKOX2W6LMYHWLEV\"}"
+	canon := canonicalizeV5(
+		"post",
+		"FOO.example.CoM",
+		"/Foo/BaR2/qux",
+		values,
+		body,
+		"Fri, 07 Dec 2012 17:18:00 -0000")
+	expected := `Fri, 07 Dec 2012 17:18:00 -0000
+POST
+foo.example.com
+/Foo/BaR2/qux
+username=H%20ell%3Fo
+9ddab7d898836a76fafbb0dcef7bc83f14036b39bbb1ebbe43044f7c76338fa699eba8f0d3ecb329a084f32ef23c8a1609efad25032923b651e6f3f6d2f7b773
+cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e`
+	if canon != expected {
+		t.Error("Mismatch between expected and received\n" + "Expected: " + expected + "\nReceived: " + canon)
 	}
 }
 
@@ -174,7 +217,7 @@ func TestSetTransport(t *testing.T) {
 	}
 }
 
-func TestDupApiCallHttpErr(t *testing.T) {
+func TestDuoApiCallHttpErr(t *testing.T) {
 	httpClient := &mockHttpClient{doError: true}
 	sleepSvc := &mockSleepService{}
 
@@ -310,6 +353,47 @@ func TestSignedCallCompletelyRateLimited(t *testing.T) {
 	resp, _, _ := duo.SignedCall("GET", "/v9/hello/world", url.Values{})
 	assertRateLimitedCall(t, *resp, *mockHttp, *mockSleep,
 		7, rateLimitResp, completeRateLimitSleepDurations)
+}
+
+func TestHashString(t *testing.T) {
+	body := `{"limit":10,"offset":2}`
+	expected := "66fabab062974c3dd3f4d27284e41bf8121d71c0e63e95631992062ef5d1a4058403af3482c8c32ae63cd724cbf0aa793a931ef273539ef6f3745751c22f25f6"
+	res := hashString(body)
+	if res != expected {
+		t.Error("Expected hash of body params but got:\n" + res)
+	}
+}
+
+func TestJSONToValues(t *testing.T) {
+	json := JSONParams{
+		"user_id":         "1234",
+		"activation_code": "1234567890-abcdef",
+	}
+	expected := url.Values{
+		"activation_code": []string{"1234567890-abcdef"},
+		"user_id":         []string{"1234"},
+	}
+	res, _ := jsonToValues(json)
+	if !reflect.DeepEqual(res, expected) {
+		t.Error("Expected parsed JSON params but got:\n" + res.Encode())
+	}
+
+	empty_json := JSONParams{}
+	empty_expected := url.Values{}
+	empty_res, _ := jsonToValues(empty_json)
+	if !reflect.DeepEqual(empty_res, empty_expected) {
+		t.Error("Expected empty result but got:\n" + res.Encode())
+	}
+
+	bad_json := JSONParams{
+		"user_id": 1234,
+	}
+	expected_err := "JSON value not a string"
+	_, err := jsonToValues(bad_json)
+	if err.Error() != expected_err {
+		t.Error("Expected not a string error but received " + err.Error())
+	}
+
 }
 
 type mockHttpClient struct {
