@@ -37,24 +37,26 @@ func New(base duoapi.DuoApi) *Client {
 
 // User models a single user.
 type User struct {
-	Alias1            *string `url:"alias1"`
-	Alias2            *string `url:"alias2"`
-	Alias3            *string `url:"alias3"`
-	Alias4            *string `url:"alias4"`
-	Created           uint64
-	Email             string  `url:"email"`
-	FirstName         *string `url:"firstname"`
-	Groups            []Group
-	LastDirectorySync *uint64 `json:"last_directory_sync"`
-	LastLogin         *uint64 `json:"last_login"`
-	LastName          *string `url:"lastname"`
-	Notes             string  `url:"notes"`
-	Phones            []Phone
-	RealName          *string `url:"realname"`
-	Status            string  `url:"status"`
-	Tokens            []Token
-	UserID            string `json:"user_id"`
-	Username          string `url:"username"`
+	Alias1            *string           `json:"alias1" url:"alias1"`
+	Alias2            *string           `json:"alias2" url:"alias2"`
+	Alias3            *string           `json:"alias3" url:"alias3"`
+	Alias4            *string           `json:"alias4" url:"alias4"`
+	Aliases           map[string]string `json:"aliases" url:"aliases"`
+	Created           uint64            `json:"created"`
+	Email             string            `json:"email" url:"email"`
+	FirstName         *string           `json:"firstname" url:"firstname"`
+	Groups            []Group           `json:"groups"`
+	IsEnrolled        bool              `json:"is_enrolled"`
+	LastDirectorySync *uint64           `json:"last_directory_sync"`
+	LastLogin         *uint64           `json:"last_login"`
+	LastName          *string           `json:"lastname" url:"lastname"`
+	Notes             string            `json:"notes" url:"notes"`
+	Phones            []Phone           `json:"phones"`
+	RealName          *string           `json:"realname" url:"realname"`
+	Status            string            `json:"status" url:"status"`
+	Tokens            []Token           `json:"tokens"`
+	UserID            string            `json:"user_id"`
+	Username          string            `json:"username" url:"username"`
 }
 
 // URLValues transforms a User into url.Values using the 'url' struct tag to
@@ -88,51 +90,52 @@ func (u *User) URLValues() url.Values {
 
 // Group models a group to which users may belong.
 type Group struct {
-	Desc             string
+	Desc             string `json:"desc"`
 	GroupID          string `json:"group_id"`
 	MobileOTPEnabled bool   `json:"mobile_otp_enabled"`
-	Name             string
-	PushEnabled      bool `json:"push_enabled"`
-	SMSEnabled       bool `json:"sms_enabled"`
-	Status           string
-	VoiceEnabled     bool `json:"voice_enabled"`
+	Name             string `json:"name"`
+	PushEnabled      bool   `json:"push_enabled"`
+	SMSEnabled       bool   `json:"sms_enabled"`
+	Status           string `json:"status"`
+	VoiceEnabled     bool   `json:"voice_enabled"`
 }
 
 // Phone models a user's phone.
 type Phone struct {
-	Activated        bool
-	Capabilities     []string
-	Encrypted        string
-	Extension        string
-	Fingerprint      string
-	LastSeen         string `json:"last_seen"`
-	Model            string
-	Name             string
-	Number           string
-	PhoneID          string `json:"phone_id"`
-	Platform         string
-	Postdelay        string
-	Predelay         string
-	Screenlock       string
-	SMSPasscodesSent bool
-	Type             string
-	Users            []User
+	Activated        bool     `json:"activated"`
+	Capabilities     []string `json:"capabilities"`
+	Encrypted        string   `json:"encrypted"`
+	Extension        string   `json:"extension"`
+	Fingerprint      string   `json:"fingerprint"`
+	LastSeen         string   `json:"last_seen"`
+	Model            string   `json:"model"`
+	Name             string   `json:"name"`
+	Number           string   `json:"number"`
+	PhoneID          string   `json:"phone_id"`
+	Platform         string   `json:"platform"`
+	Postdelay        string   `json:"postdelay"`
+	Predelay         string   `json:"predelay"`
+	Screenlock       string   `json:"screenlock"`
+	SMSPasscodesSent bool     `json:"sms_passcodes_sent"`
+	Tampered         string   `json:"tampered"`
+	Type             string   `json:"type"`
+	Users            []User   `json:"users"`
 }
 
 // Token models a hardware security token.
 type Token struct {
 	TokenID  string `json:"token_id"`
-	Type     string
-	Serial   string
-	TOTPStep *int `json:"totp_step"`
-	Users    []User
+	Type     string `json:"type"`
+	Serial   string `json:"serial"`
+	TOTPStep *int   `json:"totp_step"`
+	Users    []User `json:"users"`
 }
 
 // U2FToken models a U2F security token.
 type U2FToken struct {
 	DateAdded      uint64 `json:"date_added"`
 	RegistrationID string `json:"registration_id"`
-	User           *User
+	User           *User  `json:"user"`
 }
 
 // Common URL options
