@@ -136,7 +136,7 @@ type Token struct {
 type WebAuthnToken struct {
 	CredentialName string `json:"credential_name"`
 	DateAdded      int    `json:"date_added"`
-	Label          int    `json:"label"`
+	Label          string `json:"label"`
 	WebauthnKey    string `json:"webauthnkey"`
 }
 
