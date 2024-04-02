@@ -56,10 +56,10 @@ type User struct {
 	RealName          *string         `json:"realname" url:"realname"`
 	Status            string          `json:"status" url:"status"`
 	Tokens            []Token         `json:"tokens"`
-	U2FToken          []U2FToken      `json:"u2ftokens"`
+	U2FTokens         []U2FToken      `json:"u2ftokens"`
 	UserID            string          `json:"user_id"`
 	Username          string          `json:"username" url:"username"`
-	WebAuthnToken     []WebAuthnToken `json:"webauthncredentials"`
+	WebAuthnTokens    []WebAuthnToken `json:"webauthncredentials"`
 }
 
 // URLValues transforms a User into url.Values using the 'url' struct tag to
