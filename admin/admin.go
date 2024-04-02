@@ -37,24 +37,29 @@ func New(base duoapi.DuoApi) *Client {
 
 // User models a single user.
 type User struct {
-	Alias1            *string `url:"alias1"`
-	Alias2            *string `url:"alias2"`
-	Alias3            *string `url:"alias3"`
-	Alias4            *string `url:"alias4"`
-	Created           uint64
-	Email             string  `url:"email"`
-	FirstName         *string `url:"firstname"`
-	Groups            []Group
-	LastDirectorySync *uint64 `json:"last_directory_sync"`
-	LastLogin         *uint64 `json:"last_login"`
-	LastName          *string `url:"lastname"`
-	Notes             string  `url:"notes"`
-	Phones            []Phone
-	RealName          *string `url:"realname"`
-	Status            string  `url:"status"`
-	Tokens            []Token
-	UserID            string `json:"user_id"`
-	Username          string `url:"username"`
+	Alias1            *string         `json:"alias1" url:"alias1"`
+	Alias2            *string         `json:"alias2" url:"alias2"`
+	Alias3            *string         `json:"alias3" url:"alias3"`
+	Alias4            *string         `json:"alias4" url:"alias4"`
+	Created           uint64          `json:"created"`
+	DesktopTokens     []interface{}   `json:"desktop_tokens"`
+	Email             string          `json:"email" url:"email"`
+	FirstName         *string         `json:"firstname" url:"firstname"`
+	Groups            []Group         `json:"groups"`
+	IsEnrolled        bool            `json:"is_enrolled"`
+	LastDirectorySync *uint64         `json:"last_directory_sync"`
+	LastLogin         *uint64         `json:"last_login"`
+	LastName          *string         `json:"lastname" url:"lastname"`
+	LockoutReason     *string         `json:"lockout_reason"`
+	Notes             string          `json:"notes" url:"notes"`
+	Phones            []Phone         `json:"phones"`
+	RealName          *string         `json:"realname" url:"realname"`
+	Status            string          `json:"status" url:"status"`
+	Tokens            []Token         `json:"tokens"`
+	U2FToken          []U2FToken      `json:"u2ftokens"`
+	UserID            string          `json:"user_id"`
+	Username          string          `json:"username" url:"username"`
+	WebAuthnToken     []WebAuthnToken `json:"webauthncredentials"`
 }
 
 // URLValues transforms a User into url.Values using the 'url' struct tag to
@@ -126,6 +131,13 @@ type Token struct {
 	Serial   string
 	TOTPStep *int `json:"totp_step"`
 	Users    []User
+}
+
+type WebAuthnToken struct {
+	CredentialName string `json:"credential_name"`
+	DateAdded      int    `json:"date_added"`
+	Label          int    `json:"label"`
+	WebauthnKey    string `json:"webauthnkey"`
 }
 
 // U2FToken models a U2F security token.
