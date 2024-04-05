@@ -42,7 +42,6 @@ type User struct {
 	Alias3            *string         `json:"alias3" url:"alias3"`
 	Alias4            *string         `json:"alias4" url:"alias4"`
 	Created           uint64          `json:"created"`
-	DesktopTokens     []interface{}   `json:"desktop_tokens"`
 	Email             string          `json:"email" url:"email"`
 	FirstName         *string         `json:"firstname" url:"firstname"`
 	Groups            []Group         `json:"groups"`
@@ -135,9 +134,9 @@ type Token struct {
 
 type WebAuthnToken struct {
 	CredentialName string `json:"credential_name"`
-	DateAdded      int    `json:"date_added"`
+	DateAdded      uint64 `json:"date_added"`
 	Label          string `json:"label"`
-	WebauthnKey    string `json:"webauthnkey"`
+	WebAuthnKey    string `json:"webauthnkey"`
 }
 
 // U2FToken models a U2F security token.
