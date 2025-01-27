@@ -48,6 +48,7 @@ func (api *AuthApi) Ping() (*PingResult, error) {
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
+	ret.SyncCode()
 	return ret, nil
 }
 
@@ -72,6 +73,7 @@ func (api *AuthApi) Check() (*CheckResult, error) {
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
+	ret.SyncCode()
 	return ret, nil
 }
 
@@ -98,6 +100,7 @@ func (api *AuthApi) Logo() (*LogoResult, error) {
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
+	ret.SyncCode()
 	return ret, nil
 }
 
@@ -145,6 +148,7 @@ func (api *AuthApi) Enroll(options ...func(*url.Values)) (*EnrollResult, error) 
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
+	ret.SyncCode()
 	return ret, nil
 }
 
@@ -174,6 +178,7 @@ func (api *AuthApi) EnrollStatus(userid string,
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
+	ret.SyncCode()
 	return ret, nil
 }
 
@@ -239,6 +244,7 @@ func (api *AuthApi) Preauth(options ...func(*url.Values)) (*PreauthResult, error
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
+	ret.SyncCode()
 	return ret, nil
 }
 
@@ -348,6 +354,7 @@ func (api *AuthApi) Auth(factor string, options ...func(*url.Values)) (*AuthResu
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
+	ret.SyncCode()
 	return ret, nil
 }
 
@@ -377,5 +384,6 @@ func (api *AuthApi) AuthStatus(txid string) (*AuthStatusResult, error) {
 	if err = json.Unmarshal(body, ret); err != nil {
 		return nil, err
 	}
+	ret.SyncCode()
 	return ret, nil
 }

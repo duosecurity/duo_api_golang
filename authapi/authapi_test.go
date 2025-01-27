@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/duosecurity/duo_api_golang"
+	duoapi "github.com/duosecurity/duo_api_golang"
 )
 
 func buildAuthApi(url string, proxy func(*http.Request) (*url.URL, error)) *AuthApi {
@@ -203,7 +203,7 @@ func TestLogo(t *testing.T) {
 	}
 }
 
-// Test a failure logo reqeust / response.
+// Test a failure logo request / response.
 func TestLogoError(t *testing.T) {
 	ts := httptest.NewTLSServer(
 		http.HandlerFunc(
@@ -600,5 +600,42 @@ func TestAuthStatus(t *testing.T) {
 	}
 	if res.Response.Status_Msg != "Pushed a login request to your phone..." {
 		t.Error("Unexpected response status msg: " + res.Response.Status_Msg)
+	}
+}
+
+// Test a response with empty code.
+func TestEmptyResponseCode(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				// Return a 400, as if the logo was not found.
+				w.WriteHeader(400)
+				fmt.Fprintln(w, `
+                {
+                    "stat": "FAIL",
+                    "code": "",
+                    "message": "Code is empty",
+                    "message_detail": "Deal with it"
+                  }`)
+			}))
+	defer ts.Close()
+
+	duo := buildAuthApi(ts.URL, nil)
+
+	res, err := duo.Logo()
+	if err != nil {
+		t.Error("Failed TestCheck: " + err.Error())
+	}
+	if res.Stat != "FAIL" {
+		t.Error("Expected FAIL, but got " + res.Stat)
+	}
+	if res.Code == nil || *res.Code != 0 {
+		t.Error("Unexpected response code.")
+	}
+	if res.Message == nil || *res.Message != "Code is empty" {
+		t.Error("Unexpected message.")
+	}
+	if res.Message_Detail == nil || *res.Message_Detail != "Deal with it" {
+		t.Error("Unexpected message detail.")
 	}
 }
