@@ -259,14 +259,41 @@ func (duoapi *DuoApi) buildOptions(options ...DuoApiOption) *requestOptions {
 	return opts
 }
 
+type NullableInt32 struct {
+	value *int32
+}
+
 // API calls will return a StatResult object.  On success, Stat is 'OK'.
 // On error, Stat is 'FAIL', and Code, Message, and Message_Detail
 // contain error information.
 type StatResult struct {
-	Stat           string
-	Code           *int32
-	Message        *string
-	Message_Detail *string
+	Stat           string        `json:"stat"`
+	Ncode          NullableInt32 `json:"code"`
+	Code           *int32        `json:"-"`
+	Message        *string       `json:"message"`
+	Message_Detail *string       `json:"message_detail"`
+}
+
+func (n *NullableInt32) UnmarshalJSON(data []byte) error {
+	var raw interface{}
+
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	switch v := raw.(type) {
+	case float64:
+		intVal := int32(v)
+		n.value = &intVal
+	case string:
+		intVal := int32(0)
+		n.value = &intVal
+	}
+	return nil
+}
+
+func (s *StatResult) SyncCode() {
+	s.Code = s.Ncode.value
 }
 
 // SetCustomHTTPClient allows one to set a completely custom http client that
