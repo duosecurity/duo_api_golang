@@ -44,10 +44,69 @@ type AuthLogResult struct {
 }
 
 // An AuthLog retrieved from https://duo.com/docs/adminapi#authentication-logs
-// TODO: @Duo update this to be a struct based on the returned JSON structure of an authentication log.
-type AuthLog map[string]interface{}
+type AuthLog struct {
+	AccessDevice AccessDevice `json:"access_device"`
+	Alias        string       `json:"alias"`
+	Application  Application  `json:"application"`
+	AuthDevice   AuthDevice   `json:"auth_device"`
+	Email        string       `json:"email"`
+	EventType    string       `json:"event_type"`
+	Factor       string       `json:"factor"`
+	ISOTimestamp time.Time    `json:"isotimestamp"`
+	OODSoftware  string       `json:"ood_software"`
+	Reason       string       `json:"reason"`
+	Result       string       `json:"result"`
+	Timestamp    int64        `json:"timestamp"`
+	TxID         string       `json:"txid"`
+	User         UserV2       `json:"user"`
+}
 
-// An AuthLogList holds retreived logs and V2 metadata used for pagination.
+// AccessDevice models a device that user uses to authenticate themselves.
+type AccessDevice struct {
+	Browser             string   `json:"browser"`
+	BrowserVersion      string   `json:"browser_version"`
+	FlashVersion        string   `json:"flash_version"`
+	Hostname            string   `json:"hostname"`
+	IP                  string   `json:"ip"`
+	IsEncryptionEnabled string   `json:"is_encryption_enabled"`
+	IsFirewallEnabled   string   `json:"is_firewall_enabled"`
+	IsPasswordSet       string   `json:"is_password_set"`
+	JavaVersion         string   `json:"java_version"`
+	Location            Location `json:"location"`
+	OS                  string   `json:"os"`
+	OSVersion           string   `json:"os_version"`
+	SecurityAgents      string   `json:"security_agents"`
+}
+
+// Application models information about the accessed application.
+type Application struct {
+	Key  string
+	Name string
+}
+
+// Location represents a location where the user authenticates themselves.
+type Location struct {
+	City    string `json:"city"`
+	Country string `json:"country"`
+	State   string `json:"state"`
+}
+
+// AuthDevice models information about the device used to approve or
+// deny authentication.
+type AuthDevice struct {
+	IP       string   `json:"ip"`
+	Location Location `json:"location"`
+	Name     string   `json:"name"`
+}
+
+// UserV2 models information about the authenticating user.
+type UserV2 struct {
+	Groups []string `json:"groups"`
+	Key    string   `json:"key"`
+	Name   string   `json:"name"`
+}
+
+// An AuthLogList holds retrieved logs and V2 metadata used for pagination.
 type AuthLogList struct {
 	Metadata LogListV2Metadata `json:"metadata"`
 	Logs     []AuthLog         `json:"authlogs"`
