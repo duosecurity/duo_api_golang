@@ -62,7 +62,7 @@ type User struct {
 }
 
 // URLValues transforms a User into url.Values using the 'url' struct tag to
-// define the key of the map. Fields are skiped if the value is empty.
+// define the key of the map. Fields are skipped if the value is empty.
 func (u *User) URLValues() url.Values {
 	params := url.Values{}
 
@@ -75,17 +75,20 @@ func (u *User) URLValues() url.Values {
 		if tag == "" {
 			continue
 		}
-		// Skip fields have a zero value.
-		if v.Field(i).Interface() == reflect.Zero(v.Field(i).Type()).Interface() {
+
+		f := v.Field(i)
+
+		// Dereference Pointers
+		if f.Kind() == reflect.Ptr && !f.IsNil() {
+			f = f.Elem()
+		}
+
+		// Skip fields that have a zero value.
+		if f.Interface() == reflect.Zero(f.Type()).Interface() {
 			continue
 		}
-		var val string
-		if t.Field(i).Type.Kind() == reflect.Ptr {
-			val = fmt.Sprintf("%v", v.Field(i).Elem())
-		} else {
-			val = fmt.Sprintf("%v", v.Field(i))
-		}
-		params[tag] = []string{val}
+
+		params[tag] = []string{fmt.Sprintf("%v", f)}
 	}
 	return params
 }
