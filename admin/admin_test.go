@@ -2385,3 +2385,39 @@ func TestGetBypassCodes(t *testing.T) {
 		t.Errorf("Expected 10 codes, but got %d", len(result.Response))
 	}
 }
+
+const getErrorGetUsersResponse = `{
+	"stat": "FAIL",
+	"code": 500,
+	"message": "Internal Server Error",
+	"message_detail": "The server encountered an internal error and was unable to complete your request"
+}`
+
+func TestErrorGetUsers(t *testing.T) {
+	ts := httptest.NewTLSServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, getErrorGetUsersResponse)
+		}),
+	)
+	defer ts.Close()
+
+	duo := buildAdminClient(ts.URL, nil)
+
+	result, err := duo.GetUsers()
+	if err != nil {
+		t.Errorf("Unexpected error from GetUsers call %v", err.Error())
+	}
+	if result.Stat != "FAIL" {
+		t.Errorf("Expected FAIL, but got %s", result.Stat)
+	}
+	result.SyncCode()
+	if *result.Code != 500 {
+		t.Errorf("Expected 500, but got %d", *result.Code)
+	}
+	if *result.Message != "Internal Server Error" {
+		t.Errorf("Expected Internal Server Error, but got %s", *result.Message)
+	}
+	if *result.Message_Detail != "The server encountered an internal error and was unable to complete your request" {
+		t.Errorf("Expected Message_Detail to be The server encountered an internal error and was unable to complete your request, but got %s", *result.Message_Detail)
+	}
+}
