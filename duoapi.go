@@ -147,11 +147,11 @@ func (svc timeSleepService) Sleep(duration time.Duration) {
 }
 
 type apiOptions struct {
-	timeout      time.Duration
-	insecure     bool
-	proxy        func(*http.Request) (*url.URL, error)
-	transport    func(*http.Transport)
-	caPinning    bool
+	timeout   time.Duration
+	insecure  bool
+	proxy     func(*http.Request) (*url.URL, error)
+	transport func(*http.Transport)
+	caPinning bool
 }
 
 // Optional parameter for NewDuoApi, used to configure timeouts on API calls.
