@@ -203,6 +203,36 @@ func TestNewDuo(t *testing.T) {
 	}
 }
 
+func TestNewDuoDefaultHasCAPinning(t *testing.T) {
+	duo := NewDuoApi("ABC", "123", "api-XXXXXXX.duosecurity.com", "go-client")
+	httpClient := duo.apiClient.(*http.Client)
+	transport := httpClient.Transport.(*http.Transport)
+	if transport.TLSClientConfig.RootCAs == nil {
+		t.Fatal("Default Duo API client should have pinned CA certificates")
+	}
+}
+
+func TestSetCAPinningEnabled(t *testing.T) {
+	duo := NewDuoApi("ABC", "123", "api-XXXXXXX.duosecurity.com", "go-client", SetCAPinning(true))
+	httpClient := duo.apiClient.(*http.Client)
+	transport := httpClient.Transport.(*http.Transport)
+	if transport.TLSClientConfig.RootCAs == nil {
+		t.Fatal("Duo API client with CA pinning enabled should have pinned CA certificates")
+	}
+}
+
+func TestSetCAPinningDisabled(t *testing.T) {
+	duo := NewDuoApi("ABC", "123", "api-XXXXXXX.duosecurity.com", "go-client", SetCAPinning(false))
+	httpClient := duo.apiClient.(*http.Client)
+	transport := httpClient.Transport.(*http.Transport)
+	if transport.TLSClientConfig.RootCAs != nil {
+		t.Fatal("Duo API client with CA pinning disabled should use system trust store (nil RootCAs)")
+	}
+	if transport.TLSClientConfig.InsecureSkipVerify {
+		t.Fatal("Disabling CA pinning should not disable TLS verification")
+	}
+}
+
 func TestSetTransport(t *testing.T) {
 	transportOpt := func(tr *http.Transport) {
 		tr.MaxResponseHeaderBytes = 12345
