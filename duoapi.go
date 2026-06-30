@@ -151,6 +151,7 @@ type apiOptions struct {
 	insecure  bool
 	proxy     func(*http.Request) (*url.URL, error)
 	transport func(*http.Transport)
+	caPinning bool
 }
 
 // Optional parameter for NewDuoApi, used to configure timeouts on API calls.
@@ -183,6 +184,16 @@ func SetTransport(transport func(*http.Transport)) func(*apiOptions) {
 	}
 }
 
+// SetCAPinning controls whether Duo's CA certificate pinning is enforced.
+// When set to false, the client uses the system's default certificate trust store
+// instead of the pinned Duo CA certificates, while keeping TLS verification active.
+// Default is true (CA pinning enabled).
+func SetCAPinning(enabled bool) func(*apiOptions) {
+	return func(opts *apiOptions) {
+		opts.caPinning = enabled
+	}
+}
+
 // Build an return a DuoApi struct.
 // ikey is your Duo integration key
 // skey is your Duo integration secret key
@@ -199,21 +210,24 @@ func NewDuoApi(ikey string,
 	host string,
 	userAgent string,
 	options ...func(*apiOptions)) *DuoApi {
-	opts := apiOptions{proxy: http.ProxyFromEnvironment}
+	opts := apiOptions{proxy: http.ProxyFromEnvironment, caPinning: true}
 	for _, o := range options {
 		o(&opts)
 	}
 
-	// Certificate pinning
-	certPool := x509.NewCertPool()
-	certPool.AppendCertsFromPEM([]byte(duoPinnedCert))
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: opts.insecure,
+	}
+
+	if opts.caPinning {
+		certPool := x509.NewCertPool()
+		certPool.AppendCertsFromPEM([]byte(duoPinnedCert))
+		tlsConfig.RootCAs = certPool
+	}
 
 	tr := &http.Transport{
-		Proxy: opts.proxy,
-		TLSClientConfig: &tls.Config{
-			RootCAs:            certPool,
-			InsecureSkipVerify: opts.insecure,
-		},
+		Proxy:           opts.proxy,
+		TLSClientConfig: tlsConfig,
 	}
 	if opts.transport != nil {
 		opts.transport(tr)
