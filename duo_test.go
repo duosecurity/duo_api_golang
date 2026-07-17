@@ -233,6 +233,29 @@ func TestSetCAPinningDisabled(t *testing.T) {
 	}
 }
 
+func TestUserAgentIncludesCABundleAndPinningEnabled(t *testing.T) {
+	duo := NewDuoApi("ABC", "123", "api-XXXXXXX.duosecurity.com", "go-client")
+	if !strings.Contains(duo.userAgent, "ca_bundle/"+caBundleVersion) {
+		t.Fatalf("User agent should include the CA bundle version, got: %q", duo.userAgent)
+	}
+	if !strings.Contains(duo.userAgent, "(ca_pinning=enabled)") {
+		t.Fatalf("User agent should report (ca_pinning=enabled) by default, got: %q", duo.userAgent)
+	}
+	if strings.Contains(duo.userAgent, "(ca_pinning=disabled)") {
+		t.Fatalf("User agent should not report (ca_pinning=disabled) when pinning is enabled, got: %q", duo.userAgent)
+	}
+}
+
+func TestUserAgentReportsPinningDisabled(t *testing.T) {
+	duo := NewDuoApi("ABC", "123", "api-XXXXXXX.duosecurity.com", "go-client", SetCAPinning(false))
+	if !strings.Contains(duo.userAgent, "ca_bundle/"+caBundleVersion) {
+		t.Fatalf("User agent should include the CA bundle version, got: %q", duo.userAgent)
+	}
+	if !strings.Contains(duo.userAgent, "(ca_pinning=disabled)") {
+		t.Fatalf("User agent should report (ca_pinning=disabled) when pinning is disabled, got: %q", duo.userAgent)
+	}
+}
+
 func TestSetTransport(t *testing.T) {
 	transportOpt := func(tr *http.Transport) {
 		tr.MaxResponseHeaderBytes = 12345
