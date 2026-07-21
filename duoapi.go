@@ -22,6 +22,8 @@ import (
 const (
 	version           = "0.2.0"
 	defaultUserAgent  = "duo_api_golang/" + version
+	caBundleVersion   = "1.0"
+	caBundleUserAgent = "ca_bundle/" + caBundleVersion
 	initialBackoffMS  = 1000
 	maxBackoffMS      = 32000
 	backoffFactor     = 2
@@ -194,6 +196,15 @@ func SetCAPinning(enabled bool) func(*apiOptions) {
 	}
 }
 
+// caPinningUserAgent returns the user agent fragment describing the current
+// CA pinning state, e.g. "(ca_pinning=enabled)" or "(ca_pinning=disabled)".
+func caPinningUserAgent(enabled bool) string {
+	if enabled {
+		return "(ca_pinning=enabled)"
+	}
+	return "(ca_pinning=disabled)"
+}
+
 // Build an return a DuoApi struct.
 // ikey is your Duo integration key
 // skey is your Duo integration secret key
@@ -236,7 +247,7 @@ func NewDuoApi(ikey string,
 	if userAgent != "" {
 		userAgent += " "
 	}
-	userAgent += defaultUserAgent
+	userAgent += defaultUserAgent + " " + caBundleUserAgent + " " + caPinningUserAgent(opts.caPinning)
 
 	return &DuoApi{
 		ikey:      ikey,
