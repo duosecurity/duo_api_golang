@@ -317,6 +317,13 @@ func (n *NullableInt32) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (n NullableInt32) MarshalJSON() ([]byte, error) {
+	if n.value == nil {
+		return json.Marshal(nil)
+	}
+	return json.Marshal(*n.value)
+}
+
 func (s *StatResult) SyncCode() {
 	s.Code = s.Ncode.value
 }
