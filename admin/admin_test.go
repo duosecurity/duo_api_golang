@@ -159,6 +159,7 @@ func TestUser_URLValues(t *testing.T) {
 	}
 
 	exAlias := "smith"
+	emptyFirstName := ""
 
 	tests := []struct {
 		name   string
@@ -199,6 +200,18 @@ func TestUser_URLValues(t *testing.T) {
 				Groups:   []Group{{Name: "group1"}},
 				Phones:   []Phone{{Name: "phone1"}},
 				Tokens:   []Token{{TokenID: "token1"}},
+			},
+			want: url.Values(map[string][]string{
+				"username": {"jsmith"}},
+			),
+		},
+		{
+			name: "Empty values skipped",
+			fields: fields{
+				Username:  "jsmith",
+				FirstName: &emptyFirstName,
+				LastName:  nil,
+				Notes:     "",
 			},
 			want: url.Values(map[string][]string{
 				"username": {"jsmith"}},
