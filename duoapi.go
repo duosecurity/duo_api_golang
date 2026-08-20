@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	version           = "0.2.0"
+	version           = "0.3.0"
 	defaultUserAgent  = "duo_api_golang/" + version
 	caBundleVersion   = "1.0"
 	caBundleUserAgent = "ca_bundle/" + caBundleVersion
