@@ -62,7 +62,7 @@ type User struct {
 }
 
 // URLValues transforms a User into url.Values using the 'url' struct tag to
-// define the key of the map. Fields are skiped if the value is empty.
+// define the key of the map. Fields are skipped if the value is empty.
 func (u *User) URLValues() url.Values {
 	params := url.Values{}
 
@@ -189,8 +189,8 @@ func (result *GetUsersResult) getResponse() interface{} {
 }
 
 func (result *GetUsersResult) appendResponse(users interface{}) {
-	asserted_users := users.([]User)
-	result.Response = append(result.Response, asserted_users...)
+	assertedUsers := users.([]User)
+	result.Response = append(result.Response, assertedUsers...)
 }
 
 // GetUsers calls GET /admin/v1/users
@@ -201,10 +201,10 @@ func (c *Client) GetUsers(options ...func(*url.Values)) (*GetUsersResult, error)
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrieveUsers(params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -212,18 +212,18 @@ func (c *Client) GetUsers(options ...func(*url.Values)) (*GetUsersResult, error)
 	return response.(*GetUsersResult), nil
 }
 
-type responsePage interface {
+type ResponsePage interface {
 	metadata() ListResultMetadata
 	getResponse() interface{}
 	appendResponse(interface{})
 }
 
-type pageFetcher func(params url.Values) (responsePage, error)
+type pageFetcher func(params url.Values) (ResponsePage, error)
 
-func (c *Client) retrieveItems(
+func (c *Client) RetrieveItems(
 	params url.Values,
 	fetcher pageFetcher,
-) (responsePage, error) {
+) (ResponsePage, error) {
 	if params.Get("offset") == "" {
 		params.Set("offset", "0")
 	}
@@ -346,10 +346,10 @@ func (c *Client) GetUserGroups(userID string, options ...func(*url.Values)) (*Ge
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrieveUserGroups(userID, params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -420,10 +420,10 @@ func (c *Client) GetUserPhones(userID string, options ...func(*url.Values)) (*Ge
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrieveUserPhones(userID, params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -455,10 +455,10 @@ func (c *Client) GetUserTokens(userID string, options ...func(*url.Values)) (*Ge
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrieveUserTokens(userID, params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -517,10 +517,10 @@ func (c *Client) GetUserU2FTokens(userID string, options ...func(*url.Values)) (
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrieveUserU2FTokens(userID, params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -588,8 +588,8 @@ func (result *GetGroupsResult) getResponse() interface{} {
 }
 
 func (result *GetGroupsResult) appendResponse(groups interface{}) {
-	asserted_groups := groups.([]Group)
-	result.Response = append(result.Response, asserted_groups...)
+	assertedGroups := groups.([]Group)
+	result.Response = append(result.Response, assertedGroups...)
 }
 
 // GetGroups calls GET /admin/v1/groups
@@ -600,10 +600,10 @@ func (c *Client) GetGroups(options ...func(*url.Values)) (*GetGroupsResult, erro
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrieveGroups(params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -677,8 +677,8 @@ func (result *GetPhonesResult) getResponse() interface{} {
 }
 
 func (result *GetPhonesResult) appendResponse(phones interface{}) {
-	asserted_phones := phones.([]Phone)
-	result.Response = append(result.Response, asserted_phones...)
+	assertedPhones := phones.([]Phone)
+	result.Response = append(result.Response, assertedPhones...)
 }
 
 // GetPhones calls GET /admin/v1/phones
@@ -689,10 +689,10 @@ func (c *Client) GetPhones(options ...func(*url.Values)) (*GetPhonesResult, erro
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrievePhones(params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -778,8 +778,8 @@ func (result *GetTokensResult) getResponse() interface{} {
 }
 
 func (result *GetTokensResult) appendResponse(tokens interface{}) {
-	asserted_tokens := tokens.([]Token)
-	result.Response = append(result.Response, asserted_tokens...)
+	assertedTokens := tokens.([]Token)
+	result.Response = append(result.Response, assertedTokens...)
 }
 
 // GetTokens calls GET /admin/v1/tokens
@@ -790,10 +790,10 @@ func (c *Client) GetTokens(options ...func(*url.Values)) (*GetTokensResult, erro
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrieveTokens(params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -853,8 +853,8 @@ func (result *GetU2FTokensResult) getResponse() interface{} {
 }
 
 func (result *GetU2FTokensResult) appendResponse(tokens interface{}) {
-	asserted_tokens := tokens.([]U2FToken)
-	result.Response = append(result.Response, asserted_tokens...)
+	assertedTokens := tokens.([]U2FToken)
+	result.Response = append(result.Response, assertedTokens...)
 }
 
 // GetU2FTokens calls GET /admin/v1/u2ftokens
@@ -865,10 +865,10 @@ func (c *Client) GetU2FTokens(options ...func(*url.Values)) (*GetU2FTokensResult
 		o(&params)
 	}
 
-	cb := func(params url.Values) (responsePage, error) {
+	cb := func(params url.Values) (ResponsePage, error) {
 		return c.retrieveU2FTokens(params)
 	}
-	response, err := c.retrieveItems(params, cb)
+	response, err := c.RetrieveItems(params, cb)
 	if err != nil {
 		return nil, err
 	}
