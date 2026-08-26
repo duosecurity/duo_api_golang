@@ -59,6 +59,9 @@ const getAuthLogsResponse = `{
                     "flash_version": "uninstalled",
                     "hostname": "null",
                     "ip": "169.232.89.219",
+                    "is_encryption_enabled": "true",
+                    "is_firewall_enabled": "true",
+                    "is_password_set": "true",
                     "java_version": "uninstalled",
                     "location": {
                         "city": "Ann Arbor",
@@ -66,8 +69,10 @@ const getAuthLogsResponse = `{
                         "state": "Michigan"
                     },
                     "os": "Mac OS X",
-                    "os_version": "10.14.1"
+                    "os_version": "10.14.1",
+                    "security_agents": "unknown"
                 },
+                "alias": "",
                 "application": {
                     "key": "DIY231J8BR23QK4UKBY8",
                     "name": "Microsoft Azure Active Directory"
@@ -81,14 +86,21 @@ const getAuthLogsResponse = `{
                     },
                     "name": "My iPhone X (734-555-2342)"
                 },
+                "email": "narroway@example.com",
                 "event_type": "authentication",
                 "factor": "duo_push",
+                "isotimestamp": "2020-02-13T18:56:20.351346+00:00",
+                "ood_software": "null",
                 "reason": "user_approved",
                 "result": "success",
-                "timestamp": 1532951962,
+                "timestamp": 1581620180,
                 "trusted_endpoint_status": "not trusted",
                 "txid": "340a23e3-23f3-23c1-87dc-1491a23dfdbb",
                 "user": {
+                    "groups": [
+                        "Duo Users",
+                        "CorpHQ Users"
+                    ],
                     "key": "DU3KC77WJ06Y5HIV7XKQ",
                     "name": "narroway@example.com"
                 }
@@ -134,7 +146,7 @@ func TestGetAuthLogs(t *testing.T) {
 	if length := len(result.Response.Logs); length != 1 {
 		t.Errorf("Expected 1 log, but got %d", length)
 	}
-	if txid := result.Response.Logs[0]["txid"]; txid != "340a23e3-23f3-23c1-87dc-1491a23dfdbb" {
+	if txid := result.Response.Logs[0].TxID; txid != "340a23e3-23f3-23c1-87dc-1491a23dfdbb" {
 		t.Errorf("Expected txid '340a23e3-23f3-23c1-87dc-1491a23dfdbb', but got %v", txid)
 	}
 	if next := result.Response.Metadata.GetNextOffset(); next == nil {
